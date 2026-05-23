@@ -37,12 +37,24 @@
 
     /* Classe utilitária para quando estiver arrastando a tela */
     .grabbing { cursor: grabbing !important; user-select: none; }
+
+    /* Animação para destacar nó pesquisado */
+    @keyframes highlight-pulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .highlight-node {
+        animation: highlight-pulse 1.5s infinite;
+        border-color: #10b981 !important;
+        border-width: 2px !important;
+    }
   </style>
 </head>
-<body id="body-container" class="font-sans text-slate-800 flex flex-col h-screen overflow-hidden bg-[url('https://i.imgur.com/zaP8fZ8.jpeg')] bg-cover bg-center bg-fixed">
+<body id="body-container" class="font-sans text-slate-800 flex flex-col h-screen overflow-hidden bg-[url('https://i.imgur.com/zaP8fZ8.jpeg')] bg-cover bg-center bg-fixed transition-colors duration-500">
   
   <!-- Overlay de Blur para o Fundo -->
-  <div class="fixed inset-0 bg-white/40 backdrop-blur-sm -z-10"></div>
+  <div id="bg-overlay" class="fixed inset-0 bg-white/40 backdrop-blur-sm -z-10 transition-opacity duration-500"></div>
 
   <!-- Overlay de Loading -->
   <div id="loading" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -130,12 +142,32 @@
   </div>
 
   <!-- BARRA DE NAVEGAÇÃO SUPERIOR -->
-  <header class="flex-none w-full bg-white shadow-sm border-b border-slate-200 z-50 flex items-center justify-between px-4 sm:px-6 py-3 hidden-for-pdf">
+  <header id="main-header" class="flex-none w-full bg-white shadow-sm border-b border-slate-200 z-50 flex items-center justify-between px-4 sm:px-6 py-3 hidden-for-pdf">
     <div class="flex items-center gap-3">
       <img src="https://i.imgur.com/nwWZpfC.png" alt="Logo SPG" class="h-8 w-auto object-contain" onerror="this.src='https://placehold.co/100x40?text=Logo+SPG'">
       <h1 class="text-lg font-bold text-slate-800 hidden sm:block">Organograma - SPG</h1>
     </div>
-    <div class="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
+    
+    <div class="flex items-center gap-2 sm:gap-4 flex-wrap justify-end flex-1 ml-4">
+      
+      <!-- Busca Global -->
+      <div class="relative hidden lg:block max-w-xs w-full">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input type="text" id="global-search" placeholder="Procurar pessoa..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onkeypress="if(event.key === 'Enter') buscarColaborador(this.value)">
+      </div>
+
+      <!-- Botão Modo Compacto -->
+      <button onclick="toggleCompactMode()" id="btn-compact" class="bg-white p-2 flex items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Alternar Modo Compacto">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+      </button>
+
+      <!-- Botão Exportar PDF -->
+      <button onclick="exportarParaPDF()" class="bg-white p-2 flex items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:text-red-600 hover:bg-red-50 transition" title="Exportar PDF">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
+      </button>
+
       <!-- Botão Estatísticas -->
       <button onclick="abrirStatsModal()" class="bg-slate-50 p-2 px-3 flex items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Ver Estatísticas">
         <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
@@ -164,7 +196,7 @@
   <!-- WRAPPER PARA O CORPO -->
   <div class="flex flex-1 overflow-hidden w-full relative">
 
-    <aside id="sidebar" class="w-full sm:w-80 fixed sm:relative bg-white border-r border-slate-200 flex-col h-full shadow-lg z-40 flex-shrink-0 transition-all duration-300 hidden">
+    <aside id="sidebar" class="w-full sm:w-80 fixed sm:relative bg-white border-r border-slate-200 flex-col h-full shadow-lg z-40 flex-shrink-0 transition-all duration-300 hidden hidden-for-pdf">
       <div class="p-6 border-b border-slate-100 relative">
         <button onclick="toggleSidebar()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -263,6 +295,7 @@
     let orgData = [];
     let currentZoom = 1.0;
     let collapsedNodes = new Set(); 
+    let isCompactMode = false;
 
     const themes = {
       green: { bg: 'bg-emerald-100', text: 'text-emerald-700', ring: 'ring-emerald-100' },
@@ -285,6 +318,113 @@
       loader.className = show 
         ? "fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center active" 
         : "hidden";
+    }
+
+    // ==========================================
+    // EXPORTAÇÃO PDF & MODO COMPACTO
+    // ==========================================
+    function toggleCompactMode() {
+      isCompactMode = !isCompactMode;
+      const btn = document.getElementById('btn-compact');
+      if (isCompactMode) {
+        btn.classList.add('bg-emerald-50', 'text-emerald-600', 'border-emerald-200');
+        btn.classList.remove('bg-white', 'text-slate-600');
+      } else {
+        btn.classList.remove('bg-emerald-50', 'text-emerald-600', 'border-emerald-200');
+        btn.classList.add('bg-white', 'text-slate-600');
+      }
+      renderApp();
+    }
+
+    async function exportarParaPDF() {
+      showLoading(true, "A gerar PDF de Alta Qualidade...");
+      
+      const bodyEl = document.getElementById('body-container');
+      const overlayEl = document.getElementById('bg-overlay');
+      const treeContainer = document.getElementById('tree-container');
+      
+      // Esconder interfaces desnecessárias
+      document.querySelectorAll('.hidden-for-pdf').forEach(el => el.style.display = 'none');
+
+      // Limpar o fundo para que o PDF fique profissional (fundo branco)
+      bodyEl.classList.remove("bg-[url('https://i.imgur.com/zaP8fZ8.jpeg')]", "bg-cover", "bg-center", "bg-fixed");
+      bodyEl.classList.add("bg-white");
+      if(overlayEl) overlayEl.classList.add("hidden");
+
+      // Resetar temporariamente o zoom
+      const savedZoom = currentZoom;
+      currentZoom = 1.0;
+      applyZoom();
+      
+      // Permitir que o DOM atualize
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const opt = {
+        margin:       10,
+        filename:     'Organograma-SPG.pdf',
+        image:        { type: 'jpeg', quality: 1 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false, windowWidth: treeContainer.scrollWidth + 100 },
+        jsPDF:        { unit: 'mm', format: 'a3', orientation: 'landscape' }
+      };
+
+      try {
+        await html2pdf().set(opt).from(treeContainer).save();
+      } catch (err) {
+        console.error("Erro ao gerar PDF:", err);
+        await customAlert("Ocorreu um problema ao processar o ficheiro PDF.", "Erro");
+      }
+
+      // Restaurar estado original
+      bodyEl.classList.add("bg-[url('https://i.imgur.com/zaP8fZ8.jpeg')]", "bg-cover", "bg-center", "bg-fixed");
+      bodyEl.classList.remove("bg-white");
+      if(overlayEl) overlayEl.classList.remove("hidden");
+      document.querySelectorAll('.hidden-for-pdf').forEach(el => el.style.display = '');
+      
+      currentZoom = savedZoom;
+      applyZoom();
+      showLoading(false);
+    }
+
+    // ==========================================
+    // BUSCA GLOBAL DE COLABORADOR
+    // ==========================================
+    function buscarColaborador(termo) {
+      if (!termo || termo.trim() === '') return;
+      const termLower = termo.toLowerCase().trim();
+      
+      // Procura primeiro pelo nome, depois pelo cargo
+      const foundNode = orgData.find(n => n.name.toLowerCase().includes(termLower) || n.title.toLowerCase().includes(termLower));
+
+      if (!foundNode) {
+        customAlert(`Não encontrámos nenhum colaborador ou cargo correspondente a "${termo}".`, "Resultado da Busca");
+        return;
+      }
+
+      // Função para expandir todos os pais do nó encontrado
+      let currentParentId = getPrimaryParent(foundNode);
+      while (currentParentId !== null && !isNaN(currentParentId)) {
+        collapsedNodes.delete(currentParentId);
+        const parentNode = orgData.find(n => n.id === currentParentId);
+        currentParentId = parentNode ? getPrimaryParent(parentNode) : null;
+      }
+
+      renderApp(); // Renderizar novamente com nós expandidos
+
+      // Dar tempo para o DOM reagir e depois fazer o scroll e destacar
+      setTimeout(() => {
+        const el = document.getElementById(`card-${foundNode.id}`);
+        if (el) {
+          // Desliza a vista suavemente até ao elemento
+          el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+          
+          // Aplica o efeito visual
+          el.classList.add('highlight-node');
+          setTimeout(() => el.classList.remove('highlight-node'), 4500); // Remove após 4.5 segundos
+          
+          // Limpa a barra de busca
+          document.getElementById('global-search').value = '';
+        }
+      }, 350);
     }
 
     function handleLoginClick() {
@@ -489,19 +629,11 @@
       `;
     }
 
-    // ==========================================
-    // LÓGICA DE CONTAGEM E ESTATÍSTICAS
-    // ==========================================
     function contarCascataSubordinados(liderId) {
       let count = 0;
       const children = orgData.filter(n => getPrimaryParent(n) === liderId);
-      
       count += children.length;
-      
-      children.forEach(child => {
-        count += contarCascataSubordinados(child.id);
-      });
-      
+      children.forEach(child => { count += contarCascataSubordinados(child.id); });
       return count;
     }
 
@@ -510,26 +642,19 @@
       const totalColab = document.getElementById('total-colab');
       
       totalColab.textContent = orgData.length;
-      
-      // Objeto para agrupar por empresa
       const orgPorEmpresa = {};
 
       orgData.forEach(node => {
-        // Tratar nós sem empresa ou com várias empresas
         const empresas = node.empresa 
           ? node.empresa.split(',').map(e => e.trim()).filter(e => e.length > 0)
           : ['Sem Local Definido'];
 
-        // Adicionar o nó a cada empresa a que pertence
         empresas.forEach(emp => {
-          if (!orgPorEmpresa[emp]) {
-            orgPorEmpresa[emp] = [];
-          }
+          if (!orgPorEmpresa[emp]) { orgPorEmpresa[emp] = []; }
           orgPorEmpresa[emp].push(node);
         });
       });
 
-      // Ordenar as empresas alfabeticamente, colocando "Sem Local Definido" no fim
       const empresasOrdenadas = Object.keys(orgPorEmpresa).sort((a, b) => {
         if (a === 'Sem Local Definido') return 1;
         if (b === 'Sem Local Definido') return -1;
@@ -540,7 +665,6 @@
       
       empresasOrdenadas.forEach((empresa, index) => {
         const pessoas = orgPorEmpresa[empresa];
-        // Ordenar pessoas dentro da empresa por nome
         pessoas.sort((a, b) => a.name.localeCompare(b.name));
 
         const empresaId = `empresa-${index}`;
@@ -668,11 +792,11 @@
 
     function createNodeCard(node) {
       const theme = themes[node.theme] || themes.blue;
+      const isCompact = isCompactMode;
       
-      // Conta as pessoas que respondem direta e indiretamente a este nó
       const qtdEquipa = contarCascataSubordinados(node.id);
       let equipaBadgeHtml = '';
-      if (qtdEquipa > 0) {
+      if (!isCompact && qtdEquipa > 0) {
         equipaBadgeHtml = `
           <div class="absolute -top-3 -right-2 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md border-2 border-white flex items-center gap-1 z-30 pointer-events-none" title="Tamanho da Equipa: ${qtdEquipa}">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
@@ -682,7 +806,7 @@
       }
 
       let empresasHtml = '';
-      if (node.empresa) {
+      if (!isCompact && node.empresa) {
         const empresasArray = node.empresa.split(',').map(e => e.trim()).filter(e => e.length > 0);
         if (empresasArray.length > 0) {
           empresasHtml = `
@@ -694,7 +818,7 @@
       }
 
       const actionButtonsHtml = isLogged ? `
-        <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity z-30">
+        <div class="absolute ${isCompact ? '-top-3 -right-3' : 'top-2 right-2'} flex gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity z-30">
           <button onclick="editNode(${node.id})" class="text-slate-300 hover:text-blue-500 bg-white/80 rounded" title="Editar cargo">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
           </button>
@@ -705,14 +829,14 @@
       ` : '';
 
       return `
-        <div class="relative inline-flex flex-col items-center w-full bg-white rounded-2xl shadow-sm border border-slate-100 p-4 z-10 hover:shadow-lg transition-all duration-300 group/card">
+        <div id="card-${node.id}" class="relative inline-flex flex-col items-center w-full bg-white rounded-2xl shadow-sm border border-slate-100 ${isCompact ? 'p-2' : 'p-4'} z-10 hover:shadow-lg transition-all duration-300 group/card">
           ${equipaBadgeHtml}
           ${empresasHtml}
           ${actionButtonsHtml}
-          <div class="font-semibold text-[10px] tracking-wider uppercase px-2.5 py-1 rounded-full mb-2 min-w-[60px] text-center ${theme.bg} ${theme.text}">${node.title}</div>
-          <div class="text-sm font-bold text-slate-800 text-center w-full truncate" title="${node.name}">${node.name}</div>
-          ${node.sub ? `<div class="text-xs text-slate-500 text-center w-full mt-1 font-medium truncate" title="${node.sub}">${node.sub}</div>` : ''}
-          ${getSecondaryParentsHtml(node)}
+          <div class="font-semibold ${isCompact ? 'text-[8px] px-1.5' : 'text-[10px] px-2.5'} tracking-wider uppercase py-1 rounded-full ${isCompact ? 'mb-0' : 'mb-2'} min-w-[60px] text-center ${theme.bg} ${theme.text}">${node.title}</div>
+          ${!isCompact ? `<div class="text-sm font-bold text-slate-800 text-center w-full truncate" title="${node.name}">${node.name}</div>` : ''}
+          ${(!isCompact && node.sub) ? `<div class="text-xs text-slate-500 text-center w-full mt-1 font-medium truncate" title="${node.sub}">${node.sub}</div>` : ''}
+          ${!isCompact ? getSecondaryParentsHtml(node) : ''}
         </div>
       `;
     }
@@ -728,7 +852,10 @@
       const isCollapsed = collapsedNodes.has(groupId);
       const isMulti = nodesInGroup.length > 1;
 
-      const lineWidth = (nodesInGroup.length - 1) * 13.5;
+      // Larguras adaptativas para o modo compacto e regular
+      const cardWidthRem = isCompactMode ? 8 : 12; // 8rem = 32 no tailwind, 12rem = 48 no tailwind
+      const gapWidthRem = 1.5; // gap-6
+      const lineWidth = (nodesInGroup.length - 1) * (cardWidthRem + gapWidthRem);
 
       let cardsHtml = `<div class="relative flex gap-6 justify-center ${isMulti ? 'pt-6 pb-6' : 'mt-3 mb-4'} group/group">`;
       
@@ -741,7 +868,7 @@
 
       cardsHtml += nodesInGroup.map(n => {
           let card = createNodeCard(n);
-          let wrapper = `<div class="relative w-48">`;
+          let wrapper = `<div class="relative ${isCompactMode ? 'w-32' : 'w-48'} transition-all duration-300">`;
           if (isMulti) {
               wrapper += `<div class="absolute top-[-24px] left-1/2 w-0 h-6 border-l-2 border-[#cbd5e1]"></div>`;
               if (hasChildren && !isCollapsed) {
