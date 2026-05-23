@@ -49,6 +49,11 @@
         border-color: #10b981 !important;
         border-width: 2px !important;
     }
+    
+    /* Estilos extra para o scroll da lista de checkboxes */
+    .checkbox-list-scroll::-webkit-scrollbar { width: 4px; }
+    .checkbox-list-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+    .checkbox-list-scroll::-webkit-scrollbar-track { background: transparent; }
   </style>
 </head>
 <body id="body-container" class="font-sans text-slate-800 flex flex-col h-screen overflow-hidden bg-[url('https://i.imgur.com/zaP8fZ8.jpeg')] bg-cover bg-center bg-fixed transition-colors duration-500">
@@ -215,11 +220,13 @@
         <form id="addNodeForm" class="space-y-4">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Nome da Pessoa</label>
-            <input type="text" id="nome" required placeholder="Ex: João Victor" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+            <input type="text" id="nome" list="nomes-list" required placeholder="Ex: João Victor" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+            <datalist id="nomes-list"></datalist>
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Setor / Função principal</label>
-            <input type="text" id="cargo" required placeholder="Ex: Compras" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+            <input type="text" id="cargo" list="cargos-list" required placeholder="Ex: Compras" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+            <datalist id="cargos-list"></datalist>
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">
@@ -238,12 +245,15 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">
-              Responde a quem? <span class="text-slate-400 normal-case font-normal">(Segure Ctrl para vários)</span>
+              Responde a quem?
             </label>
             <input type="text" id="searchParent" placeholder="Pesquisar líder por nome..." class="w-full px-3 py-2 mb-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
-            <select id="parentId" multiple class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition h-28">
-              <option value="">Ninguém (Topo da Hierarquia)</option>
-            </select>
+            
+            <!-- Nova Lista de Caixas de Seleção para Líderes -->
+            <div id="parent-checkbox-list" class="w-full bg-slate-50 border border-slate-200 rounded-lg text-sm overflow-y-auto h-40 p-1 space-y-0.5 checkbox-list-scroll">
+              <div class="text-center text-slate-400 text-xs py-4">A carregar...</div>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1.5 leading-tight">Se não marcar nenhuma opção, este cargo ficará no topo da hierarquia.</p>
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Cor do Departamento</label>
@@ -348,20 +358,16 @@
       const overlayEl = document.getElementById('bg-overlay');
       const treeContainer = document.getElementById('tree-container');
       
-      // Esconder interfaces desnecessárias
       document.querySelectorAll('.hidden-for-pdf').forEach(el => el.style.display = 'none');
 
-      // Limpar o fundo para que o PDF fique profissional (fundo branco)
       bodyEl.classList.remove("bg-[url('https://i.imgur.com/zaP8fZ8.jpeg')]", "bg-cover", "bg-center", "bg-fixed");
       bodyEl.classList.add("bg-white");
       if(overlayEl) overlayEl.classList.add("hidden");
 
-      // Resetar temporariamente o zoom
       const savedZoom = currentZoom;
       currentZoom = 1.0;
       applyZoom();
       
-      // Permitir que o DOM atualize
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const opt = {
@@ -379,7 +385,6 @@
         await customAlert("Ocorreu um problema ao processar o ficheiro PDF.", "Erro");
       }
 
-      // Restaurar estado original
       bodyEl.classList.add("bg-[url('https://i.imgur.com/zaP8fZ8.jpeg')]", "bg-cover", "bg-center", "bg-fixed");
       bodyEl.classList.remove("bg-white");
       if(overlayEl) overlayEl.classList.remove("hidden");
@@ -397,7 +402,6 @@
       if (!termo || termo.trim() === '') return;
       const termLower = termo.toLowerCase().trim();
       
-      // Procura primeiro pelo nome, depois pelo cargo
       const foundNode = orgData.find(n => n.name.toLowerCase().includes(termLower) || n.title.toLowerCase().includes(termLower));
 
       if (!foundNode) {
@@ -405,7 +409,6 @@
         return;
       }
 
-      // Função para expandir todos os pais do nó encontrado
       let currentParentId = getPrimaryParent(foundNode);
       while (currentParentId !== null && !isNaN(currentParentId)) {
         collapsedNodes.delete(currentParentId);
@@ -413,20 +416,14 @@
         currentParentId = parentNode ? getPrimaryParent(parentNode) : null;
       }
 
-      renderApp(); // Renderizar novamente com nós expandidos
+      renderApp(); 
 
-      // Dar tempo para o DOM reagir e depois fazer o scroll e destacar
       setTimeout(() => {
         const el = document.getElementById(`card-${foundNode.id}`);
         if (el) {
-          // Desliza a vista suavemente até ao elemento
           el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-          
-          // Aplica o efeito visual
           el.classList.add('highlight-node');
-          setTimeout(() => el.classList.remove('highlight-node'), 4500); // Remove após 4.5 segundos
-          
-          // Limpa a barra de busca
+          setTimeout(() => el.classList.remove('highlight-node'), 4500); 
           document.getElementById('global-search').value = '';
         }
       }, 350);
@@ -451,7 +448,7 @@
     function abrirStatsModal() {
       document.getElementById('stats-modal').classList.remove('hidden');
       document.getElementById('stats-modal').classList.add('flex');
-      gerarEstatisticas('empresa'); // Por padrão, abre em 'empresa'
+      gerarEstatisticas('empresa'); 
     }
 
     function fecharStatsModal() {
@@ -646,7 +643,6 @@
       const statsList = document.getElementById('stats-list');
       const totalColab = document.getElementById('total-colab');
       
-      // Controla a aparência das abas
       const tabEmpresa = document.getElementById('tab-empresa');
       const tabCargo = document.getElementById('tab-cargo');
       const activeClass = "flex-1 py-1.5 px-3 text-xs font-bold rounded-md bg-white text-slate-700 shadow-sm border border-slate-200 transition-all";
@@ -676,7 +672,6 @@
             dadosAgrupados[chave].push(node);
           });
         } else {
-          // Trata agrupamento por Cargo
           const chave = node.title && node.title.trim() !== '' ? node.title.trim().toUpperCase() : 'SEM CARGO DEFINIDO';
           if (!dadosAgrupados[chave]) { dadosAgrupados[chave] = []; }
           dadosAgrupados[chave].push(node);
@@ -721,7 +716,6 @@
 
         pessoas.forEach(pessoa => {
           const theme = themes[pessoa.theme] || themes.blue;
-          // Inverte as informações a exibir dependendo da aba para melhor clareza
           const badgeText = modo === 'empresa' ? pessoa.title : (pessoa.empresa || 'Sem Local');
           const subText = modo === 'empresa' ? pessoa.sub : (pessoa.sub || 'Sem subtítulo');
 
@@ -731,7 +725,7 @@
                 <span class="font-semibold text-slate-800 text-sm">${pessoa.name}</span>
                 <span class="text-xs text-slate-500">${subText}</span>
               </div>
-              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${theme.bg} ${theme.text} text-right">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${theme.bg} ${theme.text} text-right max-w-[120px] truncate">
                 ${badgeText}
               </span>
             </li>
@@ -887,9 +881,8 @@
       const isCollapsed = collapsedNodes.has(groupId);
       const isMulti = nodesInGroup.length > 1;
 
-      // Larguras adaptativas para o modo compacto e regular
-      const cardWidthRem = isCompactMode ? 8 : 12; // 8rem = 32 no tailwind, 12rem = 48 no tailwind
-      const gapWidthRem = 1.5; // gap-6
+      const cardWidthRem = isCompactMode ? 8 : 12; 
+      const gapWidthRem = 1.5; 
       const lineWidth = (nodesInGroup.length - 1) * (cardWidthRem + gapWidthRem);
 
       let cardsHtml = `<div class="relative flex gap-6 justify-center ${isMulti ? 'pt-6 pb-6' : 'mt-3 mb-4'} group/group">`;
@@ -948,21 +941,59 @@
       return `<li>${cardsHtml}${childrenHtml}</li>`;
     }
 
-    function updateSelectOptions() {
-      const select = document.getElementById('parentId');
-      select.innerHTML = '<option value="">Ninguém (Topo da Hierarquia)</option>';
-      orgData.forEach(node => {
-        const option = document.createElement('option');
-        option.value = node.id;
-        option.textContent = `${node.name} (${node.title})`;
-        select.appendChild(option);
-      });
+    function updateFormOptions() {
+      // Popular Nomes existentes
+      const nomesList = document.getElementById('nomes-list');
+      const uniqueNomes = [...new Set(orgData.map(n => n.name).filter(Boolean))].sort();
+      if(nomesList) nomesList.innerHTML = uniqueNomes.map(nome => `<option value="${nome}"></option>`).join('');
+
+      // Popular Cargos/Funções existentes
+      const cargosList = document.getElementById('cargos-list');
+      const uniqueCargos = [...new Set(orgData.map(n => n.title).filter(Boolean))].sort();
+      if(cargosList) cargosList.innerHTML = uniqueCargos.map(cargo => `<option value="${cargo}"></option>`).join('');
+
+      // Popular Empresas
+      const empresasList = document.getElementById('empresas-list');
+      const existingEmpresas = [...new Set(orgData.map(n => n.empresa).filter(Boolean).flatMap(e => e.split(',').map(s => s.trim())))].filter(Boolean);
+      const baseEmpresas = ["SPG Sede", "SPG Oásis", "SPG Estufa"];
+      const uniqueEmpresas = [...new Set([...baseEmpresas, ...existingEmpresas])].sort();
+      if(empresasList) empresasList.innerHTML = uniqueEmpresas.map(emp => `<option value="${emp}"></option>`).join('');
+
+      // Gerar a Lista Fixa de Caixas de Seleção para Líderes (Responde a quem?)
+      const parentContainer = document.getElementById('parent-checkbox-list');
+      if (parentContainer) {
+        if (orgData.length === 0) {
+          parentContainer.innerHTML = '<div class="text-center text-slate-400 text-xs py-4">Nenhum cargo disponível.</div>';
+        } else {
+          let html = '';
+          orgData.forEach(node => {
+            html += `
+              <div class="flex items-center justify-between p-1.5 hover:bg-slate-100 rounded group parent-option transition-colors" data-name="${node.name.toLowerCase()} ${node.title.toLowerCase()}">
+                <label class="flex items-center gap-2 cursor-pointer flex-1 overflow-hidden pr-2">
+                  <input type="checkbox" value="${node.id}" class="parent-checkbox flex-shrink-0 w-4 h-4 text-emerald-600 bg-white border-slate-300 rounded focus:ring-emerald-500">
+                  <span class="text-slate-700 font-medium text-xs truncate" title="${node.name} (${node.title})">${node.name} <span class="text-slate-400 font-normal">(${node.title})</span></span>
+                </label>
+                <button type="button" onclick="selecionarSomentePai(${node.id})" class="text-[10px] text-sky-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity px-2 hover:underline z-10">Somente</button>
+              </div>
+            `;
+          });
+          parentContainer.innerHTML = html;
+        }
+      }
       
       const searchParentInput = document.getElementById('searchParent');
       if (searchParentInput) {
         searchParentInput.dispatchEvent(new Event('input'));
       }
     }
+
+    // Função rápida para selecionar apenas um pai/líder (Botão "Somente")
+    window.selecionarSomentePai = function(id) {
+      const checkboxes = document.querySelectorAll('.parent-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = (cb.value == id);
+      });
+    };
 
     function renderApp() {
       const rootNodes = orgData.filter(n => {
@@ -992,7 +1023,7 @@
       } else {
         container.innerHTML = `<p class="text-slate-400 mt-20">Organograma vazio. Inicie sessão e adicione um cargo para começar.</p>`;
       }
-      updateSelectOptions();
+      updateFormOptions();
     }
 
     let editingNodeId = null;
@@ -1011,10 +1042,10 @@
       
       document.getElementById('agrupar').checked = node.grouped || false;
 
-      const parentSelect = document.getElementById('parentId');
+      // Preecher checkboxes baseando-se em node.parent
       const parentsArray = node.parent ? String(node.parent).split(',') : [];
-      Array.from(parentSelect.options).forEach(opt => {
-        opt.selected = parentsArray.includes(opt.value);
+      document.querySelectorAll('.parent-checkbox').forEach(cb => {
+        cb.checked = parentsArray.includes(cb.value);
       });
 
       const btn = document.getElementById('submitBtn');
@@ -1031,6 +1062,9 @@
       editingNodeId = null;
       document.getElementById('addNodeForm').reset();
       document.getElementById('agrupar').checked = false; 
+      
+      // Limpa checkboxes
+      document.querySelectorAll('.parent-checkbox').forEach(cb => cb.checked = false);
       
       const searchParentInput = document.getElementById('searchParent');
       if (searchParentInput) {
@@ -1052,8 +1086,9 @@
         return;
       }
       
-      const parentSelect = document.getElementById('parentId');
-      const selectedOptions = Array.from(parentSelect.selectedOptions).map(opt => opt.value).filter(val => val !== "");
+      // Pega todos os checkboxes marcados para a hierarquia
+      const checkboxes = document.querySelectorAll('.parent-checkbox:checked');
+      const selectedOptions = Array.from(checkboxes).map(cb => cb.value);
       const parentVal = selectedOptions.length > 0 ? selectedOptions.join(',') : null;
       
       const newNode = {
@@ -1110,23 +1145,25 @@
     document.addEventListener("DOMContentLoaded", () => {
       carregarDados();
 
-      // Verificação de segurança: certifica-se de que o elemento searchParent existe no DOM antes de escutar
+      // Ajustado evento de pesquisa do líder para filtrar as divs em vez de options do select
       const searchParentInput = document.getElementById('searchParent');
       if (searchParentInput) {
         searchParentInput.addEventListener('input', function(e) {
           const term = e.target.value.toLowerCase();
-          const select = document.getElementById('parentId');
-          if(select) {
-            Array.from(select.options).forEach(opt => {
-              if(opt.value === "") return; 
-              opt.style.display = opt.textContent.toLowerCase().includes(term) ? 'block' : 'none';
-            });
-          }
+          const options = document.querySelectorAll('.parent-option');
+          options.forEach(opt => {
+            const nameData = opt.getAttribute('data-name');
+            if (nameData.includes(term)) {
+              opt.style.display = 'flex';
+            } else {
+              opt.style.display = 'none';
+            }
+          });
         });
       }
 
       const mainContent = document.getElementById('main-content');
-      if (!mainContent) return; // Segurança extra
+      if (!mainContent) return; 
 
       mainContent.addEventListener('contextmenu', (e) => {
         if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('textarea')) {
