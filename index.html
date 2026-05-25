@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,14 +13,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Importando a biblioteca de exportação para PDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     /* INTELIGÊNCIA DAS LINHAS CSS COM VARIÁVEIS NATIVAS */
     .tree ul { padding-top: 24px; position: relative; display: flex; justify-content: center; transition: all 0.5s; }
     .tree li { float: left; text-align: center; list-style-type: none; position: relative; padding: 24px 12px 0 12px; transition: all 0.5s; }
     
-    /* As linhas agora puxam a variável --line-color, que é injetada via JS baseada na cor do departamento */
     .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid var(--line-color, #cbd5e1); width: 50%; height: 24px; }
     .tree li::after { right: auto; left: 50%; border-left: 2px solid var(--line-color, #cbd5e1); }
     .tree li:only-child::after, .tree li:only-child::before { display: none; }
@@ -34,14 +31,11 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     
-    /* Loading overlay */
     #loading { display: none; }
     #loading.active { display: flex; }
 
-    /* Classe utilitária para quando estiver arrastando a tela */
     .grabbing { cursor: grabbing !important; user-select: none; }
 
-    /* Animação para destacar nó pesquisado */
     @keyframes highlight-pulse {
         0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
         70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
@@ -53,7 +47,6 @@
         border-width: 2px !important;
     }
     
-    /* Estilos extra para o scroll da lista de checkboxes */
     .checkbox-list-scroll::-webkit-scrollbar { width: 4px; }
     .checkbox-list-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
     .checkbox-list-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -61,14 +54,50 @@
 </head>
 <body id="body-container" class="font-sans text-slate-800 flex flex-col h-screen overflow-hidden bg-[url('https://i.imgur.com/zaP8fZ8.jpeg')] bg-cover bg-center bg-fixed transition-colors duration-500">
   
-  <!-- Overlay de Blur para o Fundo -->
   <div id="bg-overlay" class="fixed inset-0 bg-white/40 backdrop-blur-sm -z-10 transition-opacity duration-500"></div>
 
-  <!-- Overlay de Loading -->
   <div id="loading" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center">
     <div class="bg-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-3">
       <svg class="animate-spin h-5 w-5 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
       <span id="loading-text" class="font-medium text-slate-700 text-sm">A processar...</span>
+    </div>
+  </div>
+
+  <!-- Modal de Perfil Detalhado -->
+  <div id="profile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto transform transition-all">
+      <div class="relative h-24 bg-gradient-to-r from-emerald-500 to-teal-600 flex-shrink-0">
+        <button onclick="fecharPerfilModal()" class="absolute top-4 right-4 text-white/80 hover:text-white bg-black/10 hover:bg-black/20 p-1.5 rounded-full transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div class="px-6 pb-8 relative">
+        <div class="mt-6 flex justify-between items-start">
+          <div>
+            <h2 id="perf-nome" class="text-xl font-bold text-slate-800">A carregar...</h2>
+            <p id="perf-cargo" class="text-sm font-semibold text-emerald-600 uppercase tracking-wider mt-1">-</p>
+            <p id="perf-sub" class="text-sm text-slate-500 mt-1 leading-relaxed">-</p>
+          </div>
+          <div id="perf-sexo" class="bg-slate-100 text-slate-500 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest hidden"></div>
+        </div>
+        
+        <div class="mt-6 grid grid-cols-2 gap-3">
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col justify-center">
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Tempo de Empresa</p>
+            <p id="perf-tempo" class="text-sm font-semibold text-slate-700 leading-tight">-</p>
+            <p id="perf-data-contratacao" class="text-[10px] text-slate-500 mt-1 font-medium">-</p>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col justify-center">
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Idade</p>
+            <p id="perf-idade" class="text-sm font-semibold text-slate-700 leading-tight">-</p>
+            <p id="perf-data-nascimento" class="text-[10px] text-slate-500 mt-1 font-medium">-</p>
+          </div>
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 col-span-2 mt-2">
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">Funções Detalhadas</p>
+            <p id="perf-funcoes" class="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">-</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -97,7 +126,7 @@
           <button onclick="fecharLoginModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
             Cancelar
           </button>
-          <button onclick="fazerLogin()" class="px-5 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm">
+          <button id="btn-login-submit" onclick="fazerLogin()" class="px-5 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm">
             Entrar
           </button>
         </div>
@@ -116,8 +145,8 @@
         <button id="modal-btn-cancel" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors hidden">
           Cancelar
         </button>
-        <button id="modal-btn-confirm" class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm hidden">
-          Sim, excluir
+        <button id="modal-btn-confirm" class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm hidden">
+          Confirmar
         </button>
         <button id="modal-btn-ok" class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm hidden">
           Entendi
@@ -126,39 +155,68 @@
     </div>
   </div>
 
-  <!-- Modal Estatísticas -->
-  <div id="stats-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform transition-all flex flex-col max-h-[80vh]">
-      <div class="p-6 border-b border-slate-100 bg-slate-50">
-        <div class="flex justify-between items-start mb-4">
-          <div>
-            <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-              Métricas da Organização
-            </h3>
-            <p class="text-xs text-slate-500 mt-1">Total de colaboradores: <span id="total-colab" class="font-bold text-slate-700">0</span></p>
-          </div>
-          <button onclick="fecharStatsModal()" class="text-slate-400 hover:text-slate-700 p-2 -mr-2 -mt-2 rounded-lg hover:bg-slate-200 transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
+  <!-- Dashboard de Métricas (Tela Redesenhada) -->
+  <div id="dashboard-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full overflow-hidden transform transition-all flex flex-col h-[90vh]">
+      
+      <!-- Header Dashboard -->
+      <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-white z-10">
+        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          Dashboard de Produção
+        </h3>
+        <button onclick="fecharDashboardModal()" class="text-slate-400 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- KPIs -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 bg-slate-50 border-b border-slate-200">
+        <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-center">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Equipa</span>
+          <span id="dash-kpi-total" class="text-2xl font-black text-slate-800 mt-1">0</span>
         </div>
-        
-        <!-- Abas de Filtro -->
-        <div class="flex gap-2 bg-slate-200/50 p-1 rounded-lg">
-          <button id="tab-empresa" onclick="gerarEstatisticas('empresa')" class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md bg-white text-slate-700 shadow-sm border border-slate-200 transition-all">Por Empresa</button>
-          <button id="tab-cargo" onclick="gerarEstatisticas('cargo')" class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all">Por Cargo</button>
+        <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-center">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Idade Média</span>
+          <span id="dash-kpi-idade" class="text-2xl font-black text-slate-800 mt-1">0 <span class="text-sm font-semibold text-slate-500">anos</span></span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-center">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Distribuição por Sexo</span>
+          <div class="mt-1 flex items-end gap-3">
+             <div class="flex flex-col"><span id="dash-kpi-masc" class="text-lg font-black text-blue-600">0%</span><span class="text-[9px] font-bold text-slate-400 uppercase">Masc</span></div>
+             <div class="flex flex-col"><span id="dash-kpi-fem" class="text-lg font-black text-rose-500">0%</span><span class="text-[9px] font-bold text-slate-400 uppercase">Fem</span></div>
+          </div>
         </div>
       </div>
-      <div class="p-0 overflow-y-auto flex-1 bg-white">
-        <div id="stats-list" class="divide-y divide-slate-100">
-          <!-- Conteúdo gerado dinamicamente -->
+
+      <!-- Filtros Dinâmicos -->
+      <div class="p-5 bg-white border-b border-slate-100 grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <div class="relative">
+          <input type="text" id="filter-nome" placeholder="Buscar pessoa..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" oninput="updateDashboard()">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <select id="filter-empresa" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onchange="updateDashboard()">
+          <option value="">Todas as Empresas</option>
+        </select>
+        <select id="filter-setor" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onchange="updateDashboard()">
+          <option value="">Todos os Setores</option>
+        </select>
+        <select id="filter-lider" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onchange="updateDashboard()">
+          <option value="">Todos os Líderes</option>
+        </select>
+      </div>
+
+      <!-- Lista Resultante -->
+      <div class="flex-1 overflow-y-auto p-5 bg-slate-50/50">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="dash-lista-pessoas">
+          <!-- Renderizado dinamicamente -->
         </div>
       </div>
     </div>
   </div>
 
   <!-- BARRA DE NAVEGAÇÃO SUPERIOR -->
-  <header id="main-header" class="flex-none w-full bg-white shadow-sm border-b border-slate-200 z-50 flex items-center justify-between px-4 sm:px-6 py-3 hidden-for-pdf">
+  <header id="main-header" class="flex-none w-full bg-white shadow-sm border-b border-slate-200 z-50 flex items-center justify-between px-4 sm:px-6 py-3">
     <div class="flex items-center gap-3">
       <img src="https://i.imgur.com/nwWZpfC.png" alt="Logo SPG" class="h-8 w-auto object-contain" onerror="this.src='https://placehold.co/100x40?text=Logo+SPG'">
       <h1 class="text-lg font-bold text-slate-800 hidden sm:block">Organograma - SPG</h1>
@@ -166,12 +224,12 @@
     
     <div class="flex items-center gap-2 sm:gap-4 flex-wrap justify-end flex-1 ml-4">
       
-      <!-- Busca Global -->
+      <!-- Busca Global (Destaca no Organograma) -->
       <div class="relative hidden lg:block max-w-xs w-full">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
-        <input type="text" id="global-search" placeholder="Procurar pessoa..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onkeypress="if(event.key === 'Enter') buscarColaborador(this.value)">
+        <input type="text" id="global-search" placeholder="Localizar no mapa..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onkeypress="if(event.key === 'Enter') buscarColaborador(this.value)">
       </div>
 
       <!-- Botão Modo Compacto -->
@@ -179,8 +237,8 @@
         <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
       </button>
 
-      <!-- Botão Estatísticas -->
-      <button onclick="abrirStatsModal()" class="bg-slate-50 p-2 px-3 flex items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Ver Estatísticas">
+      <!-- Botão Dashboard -->
+      <button onclick="abrirDashboardModal()" class="bg-slate-50 p-2 px-3 flex items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Abrir Dashboard de Produção">
         <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
         <span class="text-xs uppercase tracking-wider font-bold hidden md:block">Métricas</span>
       </button>
@@ -207,9 +265,9 @@
   <!-- WRAPPER PARA O CORPO -->
   <div class="flex flex-1 overflow-hidden w-full relative">
 
-    <aside id="sidebar" class="w-full sm:w-80 fixed sm:relative bg-white border-r border-slate-200 flex-col h-full shadow-lg z-40 flex-shrink-0 transition-all duration-300 hidden hidden-for-pdf">
-      <div class="p-6 border-b border-slate-100 relative">
-        <button onclick="toggleSidebar()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
+    <aside id="sidebar" class="w-full sm:w-96 fixed sm:relative bg-slate-50 border-r border-slate-200 flex-col h-full shadow-lg z-40 flex-shrink-0 transition-all duration-300 hidden">
+      <div class="p-6 bg-white border-b border-slate-100 relative shadow-sm z-10">
+        <button onclick="toggleSidebar()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
         <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2 mt-2">
@@ -220,75 +278,159 @@
       </div>
 
       <div class="p-6 overflow-y-auto flex-1">
-        <form id="addNodeForm" class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Nome da Pessoa</label>
-            <input type="text" id="nome" list="nomes-list" required placeholder="Ex: João Victor" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
-            <datalist id="nomes-list"></datalist>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Setor / Função principal</label>
-            <input type="text" id="cargo" list="cargos-list" required placeholder="Ex: Compras" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
-            <datalist id="cargos-list"></datalist>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">
-              Empresa / Unidade <span class="text-slate-400 normal-case font-normal">(Use vírgula)</span>
-            </label>
-            <input type="text" id="empresa" list="empresas-list" placeholder="Ex: SPG Sede, SPG Oásis" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
-            <datalist id="empresas-list">
-              <option value="SPG Sede"></option>
-              <option value="SPG Oásis"></option>
-              <option value="SPG Estufa"></option>
-            </datalist>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Subtítulo (Opcional)</label>
-            <input type="text" id="subtitulo" placeholder="Ex: Auxiliar Administrativo" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">
-              Responde a quem?
-            </label>
-            <input type="text" id="searchParent" placeholder="Pesquisar líder por nome..." class="w-full px-3 py-2 mb-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
-            
-            <!-- Nova Lista de Caixas de Seleção para Líderes -->
-            <div id="parent-checkbox-list" class="w-full bg-slate-50 border border-slate-200 rounded-lg text-sm overflow-y-auto h-40 p-1 space-y-0.5 checkbox-list-scroll">
-              <div class="text-center text-slate-400 text-xs py-4">A carregar...</div>
-            </div>
-            <p class="text-[10px] text-slate-500 mt-1.5 leading-tight">Se não marcar nenhuma opção, este cargo ficará no topo da hierarquia.</p>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Cor do Departamento</label>
-            <select id="tema" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
-              <option value="red">Vermelho (Gerente Geral)</option>
-              <option value="indigo">Índigo (Diretores)</option>
-              <option value="yellow">Amarelo (Sub-Gerente)</option>
-              <option value="purple">Roxo (Líder)</option>
-              <option value="teal">Verde-azulado (Auxiliar)</option>
-              <option value="rose">Preto e Dourado (Conselheiro)</option>
-              <option value="green">Verde (Direção/Campo)</option>
-              <option value="blue">Azul (Gestão/TI)</option>
-              <option value="orange">Laranja (Administrativo)</option>
-              <option value="slate">Cinza (Vigias)</option>
-              <option value="cyan">Ciano (Auxiliar de Produção)</option>
-              <option value="violet">Violeta (Líder de Produção)</option>
-            </select>
-          </div>
+        
+        <!-- Abas do Formulário -->
+        <div class="flex gap-2 bg-slate-200/60 p-1 rounded-lg mb-6 shadow-inner">
+          <button type="button" id="btn-tab-hierarquia" onclick="switchSidebarTab('hierarquia')" class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md bg-white text-slate-700 shadow-sm border border-slate-200 transition-all">Hierarquia</button>
+          <button type="button" id="btn-tab-rh" onclick="switchSidebarTab('rh')" class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all">Perfil / RH</button>
+        </div>
+
+        <form id="addNodeForm">
           
-          <div class="mt-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" id="agrupar" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer">
-              <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Liderança Conjunta</span>
-            </label>
-            <p class="text-[10px] text-slate-500 mt-1 ml-6 leading-tight">Marque para unir este cargo lado a lado com colegas da mesma função e dividir os subordinados.</p>
+          <!-- ABA: HIERARQUIA -->
+          <div id="tab-hierarquia" class="space-y-5">
+            
+            <!-- BLOCO 1: Identificação -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+              <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                Identificação
+              </h3>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Nome da Pessoa <span class="text-red-500">*</span></label>
+                <input type="text" id="nome" list="nomes-list" required placeholder="Ex: João Victor" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+                <datalist id="nomes-list"></datalist>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Setor / Função principal <span class="text-red-500">*</span></label>
+                <input type="text" id="cargo" list="cargos-list" required placeholder="Ex: Compras" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+                <datalist id="cargos-list"></datalist>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">
+                  Empresa / Unidade <span class="text-slate-400 normal-case font-normal">(Use vírgula para várias)</span>
+                </label>
+                <input type="text" id="empresa" list="empresas-list" placeholder="Ex: SPG Sede, SPG Oásis" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+                <datalist id="empresas-list">
+                  <option value="SPG Sede"></option>
+                  <option value="SPG Oásis"></option>
+                  <option value="SPG Estufa"></option>
+                </datalist>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Subtítulo (Opcional)</label>
+                <input type="text" id="subtitulo" placeholder="Ex: Auxiliar Administrativo" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+              </div>
+            </div>
+
+            <!-- BLOCO 2: Liderança -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+              <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                Liderança & Estrutura
+              </h3>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Responde a quem?</label>
+                <input type="text" id="searchParent" placeholder="Pesquisar líder por nome..." class="w-full px-3 py-2 mb-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+                <div id="parent-checkbox-list" class="w-full bg-slate-50 border border-slate-200 rounded-lg text-sm overflow-y-auto h-32 p-1 space-y-0.5 checkbox-list-scroll">
+                  <div class="text-center text-slate-400 text-xs py-4">A carregar...</div>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-2 leading-tight">Se não marcar nenhuma opção, este cargo ficará no topo da hierarquia principal.</p>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="agrupar" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer">
+                  <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Liderança Conjunta</span>
+                </label>
+                <p class="text-[10px] text-slate-500 mt-1 ml-6 leading-tight">Agrupa este cargo lado a lado com colegas da mesma função e divide os subordinados.</p>
+              </div>
+            </div>
+
+            <!-- BLOCO 3: Aparência -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+              <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+                Design Visual
+              </h3>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Cor do Departamento</label>
+                <select id="tema" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+                  <option value="red">Vermelho (Gerente Geral)</option>
+                  <option value="indigo">Índigo (Diretores)</option>
+                  <option value="yellow">Amarelo (Sub-Gerente)</option>
+                  <option value="purple">Roxo (Líder)</option>
+                  <option value="teal">Verde-azulado (Auxiliar)</option>
+                  <option value="rose">Preto e Dourado (Conselheiro)</option>
+                  <option value="green">Verde (Direção/Campo)</option>
+                  <option value="blue">Azul (Gestão/TI)</option>
+                  <option value="orange">Laranja (Administrativo)</option>
+                  <option value="slate">Cinza (Vigias)</option>
+                  <option value="cyan">Ciano (Auxiliar de Produção)</option>
+                  <option value="violet">Violeta (Líder de Produção)</option>
+                </select>
+              </div>
+            </div>
+
           </div>
 
-          <div class="flex gap-2 mt-4">
-            <button type="submit" id="submitBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
+          <!-- ABA: PERFIL / RH -->
+          <div id="tab-rh" class="space-y-5 hidden">
+            
+            <!-- BLOCO 1: Dados Pessoais -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+              <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                Dados Pessoais
+              </h3>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Nascimento</label>
+                  <input type="date" id="nascimento" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Sexo</label>
+                  <select id="sexo" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+                    <option value="">Não Informar</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Feminino">Feminino</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- BLOCO 2: Dados Corporativos -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+              <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                Dados Corporativos
+              </h3>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Contratação</label>
+                <input type="date" id="contratacao" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+              </div>
+            </div>
+
+            <!-- BLOCO 3: Funções -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+              <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                Atribuições
+              </h3>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Detalhamento das Funções</label>
+                <textarea id="funcoes" rows="3" placeholder="Descreva brevemente as responsabilidades diárias..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition resize-none text-slate-700"></textarea>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- BOTÕES AÇÕES -->
+          <div class="flex gap-3 mt-8 pb-4">
+            <button type="submit" id="submitBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-sm hover:shadow-md">
               Adicionar Cargo
             </button>
-            <button type="button" id="cancelEditBtn" onclick="cancelEdit()" class="hidden px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2.5 rounded-lg text-sm transition-colors">
+            <button type="button" id="cancelEditBtn" onclick="cancelEdit()" class="hidden px-5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold py-3 rounded-xl text-sm transition-all shadow-sm">
               Cancelar
             </button>
           </div>
@@ -297,7 +439,7 @@
     </aside>
 
     <main id="main-content" class="flex-1 overflow-auto p-4 sm:p-12 relative block pt-8 sm:pt-10 cursor-grab">
-      <div id="floating-actions" class="absolute top-6 left-6 flex gap-3 z-50 hidden-for-pdf">
+      <div id="floating-actions" class="absolute top-6 left-6 flex gap-3 z-50">
       </div>
       <div class="tree mt-2 transition-transform duration-300 origin-top w-max min-w-full mx-auto px-4 sm:px-10 pb-20 flex justify-center" id="tree-container"></div>
     </main>
@@ -315,7 +457,6 @@
     let collapsedNodes = new Set(); 
     let isCompactMode = false;
 
-    // Temas atualizados com suporte à variável HEX para as cores das linhas
     const themes = {
       green:  { bg: 'bg-emerald-100', text: 'text-emerald-700', ring: 'ring-emerald-100', hex: '#10b981' },
       blue:   { bg: 'bg-sky-100',     text: 'text-sky-700',     ring: 'ring-sky-100',     hex: '#0ea5e9' },
@@ -339,9 +480,141 @@
         : "hidden";
     }
 
-    // ==========================================
-    // EXPORTAÇÃO PDF & MODO COMPACTO
-    // ==========================================
+    window.switchSidebarTab = function(tab) {
+      const tabHie = document.getElementById('tab-hierarquia');
+      const tabRh = document.getElementById('tab-rh');
+      const btnHie = document.getElementById('btn-tab-hierarquia');
+      const btnRh = document.getElementById('btn-tab-rh');
+      
+      const activeClass = "flex-1 py-1.5 px-3 text-xs font-bold rounded-md bg-white text-slate-700 shadow-sm border border-slate-200 transition-all";
+      const inactiveClass = "flex-1 py-1.5 px-3 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
+
+      if (tab === 'hierarquia') {
+        tabHie.classList.remove('hidden');
+        tabRh.classList.add('hidden');
+        btnHie.className = activeClass;
+        btnRh.className = inactiveClass;
+      } else {
+        tabHie.classList.add('hidden');
+        tabRh.classList.remove('hidden');
+        btnRh.className = activeClass;
+        btnHie.className = inactiveClass;
+      }
+    };
+
+    function calcularIdade(dataStr) {
+      if (!dataStr) return 'Não informada';
+      const dataValida = dataStr.split('T')[0];
+      const hoje = new Date();
+      const nascimento = new Date(dataValida);
+      if (isNaN(nascimento.getTime())) return 'Inválida';
+      
+      let idade = hoje.getFullYear() - nascimento.getFullYear();
+      const m = hoje.getMonth() - nascimento.getMonth();
+      if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+        idade--;
+      }
+      return `${idade} anos`;
+    }
+
+    function calcularIdadeNumerica(dataStr) {
+      if (!dataStr) return null;
+      const dataValida = dataStr.split('T')[0];
+      const hoje = new Date();
+      const nascimento = new Date(dataValida);
+      if (isNaN(nascimento.getTime())) return null;
+      
+      let idade = hoje.getFullYear() - nascimento.getFullYear();
+      const m = hoje.getMonth() - nascimento.getMonth();
+      if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+        idade--;
+      }
+      return idade;
+    }
+
+    function calcularTempoEmpresa(dataStr) {
+      if (!dataStr) return 'Não informada';
+      const dataValida = dataStr.split('T')[0];
+      const hoje = new Date();
+      const contratacao = new Date(dataValida);
+      if (isNaN(contratacao.getTime())) return 'Inválida';
+      
+      let anos = hoje.getFullYear() - contratacao.getFullYear();
+      let meses = hoje.getMonth() - contratacao.getMonth();
+
+      if (meses < 0) {
+        anos--;
+        meses += 12;
+      }
+      if (hoje.getDate() < contratacao.getDate()) {
+        meses--;
+        if (meses < 0) {
+          anos--;
+          meses += 12;
+        }
+      }
+      
+      let resultado = [];
+      if (anos > 0) resultado.push(`${anos} ${anos === 1 ? 'ano' : 'anos'}`);
+      if (meses > 0) resultado.push(`${meses} ${meses === 1 ? 'mês' : 'meses'}`);
+      if (anos === 0 && meses === 0) return 'Menos de 1 mês';
+      
+      return resultado.join(' e ');
+    }
+
+    function formatarDataParaInput(dataIso) {
+      if (!dataIso) return "";
+      try { return dataIso.split('T')[0]; } catch(e) { return dataIso; }
+    }
+
+    function formatarDataBR(dataStr) {
+      if (!dataStr) return null;
+      const dataApenas = dataStr.split('T')[0];
+      const partes = dataApenas.split('-');
+      if (partes.length !== 3) return dataApenas; 
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+
+    window.abrirPerfilModal = function(id) {
+      const node = orgData.find(n => n.id === id);
+      if (!node) return;
+
+      document.getElementById('perf-nome').textContent = node.name || 'Sem nome';
+      document.getElementById('perf-cargo').textContent = node.title || 'Sem cargo';
+      document.getElementById('perf-sub').textContent = node.sub || 'Nenhuma informação adicional.';
+      
+      document.getElementById('perf-tempo').textContent = calcularTempoEmpresa(node.contratacao);
+      const dataContratacaoBR = formatarDataBR(node.contratacao);
+      document.getElementById('perf-data-contratacao').textContent = dataContratacaoBR ? `( ${dataContratacaoBR} )` : '';
+
+      document.getElementById('perf-idade').textContent = calcularIdade(node.nascimento);
+      const dataNascimentoBR = formatarDataBR(node.nascimento);
+      document.getElementById('perf-data-nascimento').textContent = dataNascimentoBR ? `( ${dataNascimentoBR} )` : '';
+
+      let meta = {};
+      try { meta = node.metadados ? JSON.parse(node.metadados) : {}; } catch(e) {}
+
+      document.getElementById('perf-funcoes').textContent = meta.funcoes || 'Nenhuma função detalhada cadastrada.';
+      
+      const elSexo = document.getElementById('perf-sexo');
+      if (meta.sexo && meta.sexo !== "Não Informar") {
+        elSexo.textContent = meta.sexo;
+        elSexo.classList.remove('hidden');
+      } else {
+        elSexo.classList.add('hidden');
+      }
+
+      const modal = document.getElementById('profile-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    window.fecharPerfilModal = function() {
+      const modal = document.getElementById('profile-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
     function toggleCompactMode() {
       isCompactMode = !isCompactMode;
       const btn = document.getElementById('btn-compact');
@@ -402,17 +675,6 @@
       document.getElementById('login-modal').classList.remove('flex');
     }
 
-    function abrirStatsModal() {
-      document.getElementById('stats-modal').classList.remove('hidden');
-      document.getElementById('stats-modal').classList.add('flex');
-      gerarEstatisticas('empresa'); 
-    }
-
-    function fecharStatsModal() {
-      document.getElementById('stats-modal').classList.add('hidden');
-      document.getElementById('stats-modal').classList.remove('flex');
-    }
-
     window.togglePasswordVisibility = function() {
       const input = document.getElementById('senha-input');
       const eyeIcon = document.getElementById('eye-icon');
@@ -425,27 +687,20 @@
       }
     };
 
-    window.toggleAccordion = function(id) {
-      const content = document.getElementById(`content-${id}`);
-      const icon = document.getElementById(`icon-${id}`);
-      if (content.classList.contains('hidden')) {
-        content.classList.remove('hidden');
-        icon.classList.add('rotate-180');
-      } else {
-        content.classList.add('hidden');
-        icon.classList.remove('rotate-180');
-      }
-    };
-
     async function fazerLogin() {
       const senhaDigitada = document.getElementById('senha-input').value;
       const errorMsg = document.getElementById('login-error');
+      const btnSubmit = document.getElementById('btn-login-submit');
       
       if (errorMsg) errorMsg.classList.add('hidden');
       
       if (!senhaDigitada) return;
 
-      showLoading(true, "A validar credenciais...");
+      const textoOriginal = btnSubmit.innerHTML;
+      btnSubmit.innerHTML = 'Efetuando login, aguarde...';
+      btnSubmit.disabled = true;
+      btnSubmit.classList.add('opacity-75', 'cursor-not-allowed');
+
       try {
         const response = await fetch(SCRIPT_URL, {
           method: "POST",
@@ -481,8 +736,11 @@
         } else {
           customAlert("Ocorreu um erro ao comunicar com a base de dados.", "Erro");
         }
+      } finally {
+        btnSubmit.innerHTML = textoOriginal;
+        btnSubmit.disabled = false;
+        btnSubmit.classList.remove('opacity-75', 'cursor-not-allowed');
       }
-      showLoading(false);
     }
 
     document.getElementById('senha-input').addEventListener('keypress', function (e) {
@@ -596,7 +854,6 @@
       return count;
     }
 
-    // --- NOVA FUNÇÃO AUXILIAR DE AGRUPAMENTO ---
     function buildSubGroups(nodesList) {
       const subGroups = [];
       const processedIds = new Set();
@@ -613,122 +870,150 @@
       });
       return subGroups;
     }
-    // ------------------------------------------
 
-    function gerarEstatisticas(modo = 'empresa') {
-      const statsList = document.getElementById('stats-list');
-      const totalColab = document.getElementById('total-colab');
-      
-      const tabEmpresa = document.getElementById('tab-empresa');
-      const tabCargo = document.getElementById('tab-cargo');
-      const activeClass = "flex-1 py-1.5 px-3 text-xs font-bold rounded-md bg-white text-slate-700 shadow-sm border border-slate-200 transition-all";
-      const inactiveClass = "flex-1 py-1.5 px-3 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
+    // ==========================================
+    // NOVO DASHBOARD DE MÉTRICAS
+    // ==========================================
+    window.abrirDashboardModal = function() {
+      document.getElementById('dashboard-modal').classList.remove('hidden');
+      document.getElementById('dashboard-modal').classList.add('flex');
+      preencherFiltrosDashboard();
+      updateDashboard();
+    };
 
-      if (tabEmpresa && tabCargo) {
-        if (modo === 'empresa') {
-          tabEmpresa.className = activeClass;
-          tabCargo.className = inactiveClass;
-        } else {
-          tabCargo.className = activeClass;
-          tabEmpresa.className = inactiveClass;
-        }
-      }
+    window.fecharDashboardModal = function() {
+      document.getElementById('dashboard-modal').classList.add('hidden');
+      document.getElementById('dashboard-modal').classList.remove('flex');
+    };
 
-      const totalEmpresaLength = orgData.length;
-      totalColab.textContent = totalEmpresaLength;
-      const dadosAgrupados = {};
+    function preencherFiltrosDashboard() {
+      const selectEmpresa = document.getElementById('filter-empresa');
+      const selectSetor = document.getElementById('filter-setor');
+      const selectLider = document.getElementById('filter-lider');
 
-      orgData.forEach(node => {
-        if (modo === 'empresa') {
-          const chaves = node.empresa 
-            ? node.empresa.split(/[,;]/).map(e => e.trim()).filter(e => e.length > 0)
-            : ['Sem Local Definido'];
-
-          chaves.forEach(chave => {
-            if (!dadosAgrupados[chave]) { dadosAgrupados[chave] = []; }
-            dadosAgrupados[chave].push(node);
+      // Empresas
+      const empresasSet = new Set();
+      orgData.forEach(n => {
+        if (n.empresa) {
+          n.empresa.split(/[,;]/).forEach(e => {
+            const val = e.trim();
+            if (val) empresasSet.add(val);
           });
-        } else {
-          const chave = node.title && node.title.trim() !== '' ? node.title.trim().toUpperCase() : 'SEM CARGO DEFINIDO';
-          if (!dadosAgrupados[chave]) { dadosAgrupados[chave] = []; }
-          dadosAgrupados[chave].push(node);
         }
       });
+      selectEmpresa.innerHTML = `<option value="">Todas as Empresas</option>` + [...empresasSet].sort().map(e => `<option value="${e}">${e}</option>`).join('');
 
-      const chavesOrdenadas = Object.keys(dadosAgrupados).sort((a, b) => {
-        if (a === 'Sem Local Definido' || a === 'SEM CARGO DEFINIDO') return 1;
-        if (b === 'Sem Local Definido' || b === 'SEM CARGO DEFINIDO') return -1;
-        return a.localeCompare(b);
+      // Setores/Cargos
+      const setoresSet = new Set();
+      orgData.forEach(n => {
+        if (n.title && n.title.trim()) setoresSet.add(n.title.trim());
+      });
+      selectSetor.innerHTML = `<option value="">Todos os Setores</option>` + [...setoresSet].sort().map(s => `<option value="${s}">${s}</option>`).join('');
+
+      // Líderes (pessoas que têm subordinados diretos)
+      const lideresSet = new Set();
+      orgData.forEach(n => {
+        if (getPrimaryParent(n) !== null) {
+          lideresSet.add(getPrimaryParent(n));
+        }
+      });
+      const optionsLideres = [...lideresSet].map(id => {
+        const liderNode = orgData.find(o => o.id === id);
+        return liderNode ? `<option value="${liderNode.id}">${liderNode.name}</option>` : '';
+      }).filter(Boolean).sort();
+      selectLider.innerHTML = `<option value="">Todos os Líderes</option>` + optionsLideres.join('');
+    }
+
+    window.updateDashboard = function() {
+      const term = document.getElementById('filter-nome').value.toLowerCase().trim();
+      const empFilter = document.getElementById('filter-empresa').value;
+      const setFilter = document.getElementById('filter-setor').value;
+      const lidFilter = document.getElementById('filter-lider').value;
+
+      // Aplicar filtros
+      const filteredData = orgData.filter(node => {
+        // Nome
+        if (term && !node.name.toLowerCase().includes(term)) return false;
+        
+        // Empresa
+        if (empFilter) {
+          if (!node.empresa) return false;
+          const nodeEmpresas = node.empresa.split(/[,;]/).map(e => e.trim());
+          if (!nodeEmpresas.includes(empFilter)) return false;
+        }
+
+        // Setor / Cargo
+        if (setFilter && node.title.trim() !== setFilter) return false;
+
+        // Líder
+        if (lidFilter && String(getPrimaryParent(node)) !== lidFilter) return false;
+
+        return true;
       });
 
-      let html = '';
-      
-      chavesOrdenadas.forEach((chave, index) => {
-        const pessoas = dadosAgrupados[chave];
-        pessoas.sort((a, b) => a.name.localeCompare(b.name));
+      // Calcular KPIs sobre os dados filtrados
+      let countIdades = 0;
+      let somaIdades = 0;
+      let countMasc = 0;
+      let countFem = 0;
+      let countValidosSexo = 0;
 
-        const groupId = `stats-group-${index}`;
+      filteredData.forEach(node => {
+        const idade = calcularIdadeNumerica(node.nascimento);
+        if (idade !== null) {
+          somaIdades += idade;
+          countIdades++;
+        }
+
+        let meta = {};
+        try { meta = node.metadados ? JSON.parse(node.metadados) : {}; } catch(e) {}
+        if (meta.sexo === 'Masculino') { countMasc++; countValidosSexo++; }
+        if (meta.sexo === 'Feminino') { countFem++; countValidosSexo++; }
+        if (meta.sexo === 'Outro') { countValidosSexo++; } // Adicionado aos válidos mas não no masc/fem direto se apenas mostrar M/F
+      });
+
+      const avgIdade = countIdades > 0 ? Math.round(somaIdades / countIdades) : 0;
+      const pctMasc = countValidosSexo > 0 ? Math.round((countMasc / countValidosSexo) * 100) : 0;
+      const pctFem = countValidosSexo > 0 ? Math.round((countFem / countValidosSexo) * 100) : 0;
+
+      // Atualizar Interface KPIs
+      document.getElementById('dash-kpi-total').textContent = filteredData.length;
+      document.getElementById('dash-kpi-idade').innerHTML = `${avgIdade} <span class="text-sm font-semibold text-slate-500">anos</span>`;
+      document.getElementById('dash-kpi-masc').textContent = `${pctMasc}%`;
+      document.getElementById('dash-kpi-fem').textContent = `${pctFem}%`;
+
+      // Renderizar Lista Resultante
+      const listContainer = document.getElementById('dash-lista-pessoas');
+      if (filteredData.length === 0) {
+        listContainer.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500">Nenhum colaborador encontrado com estes filtros.</div>`;
+      } else {
+        // Ordenar alfabeticamente
+        filteredData.sort((a, b) => a.name.localeCompare(b.name));
         
-        // Calcular Porcentagem de Vagas
-        const pct = ((pessoas.length / totalEmpresaLength) * 100).toFixed(1);
-
-        html += `
-          <div class="border-b border-slate-100 last:border-0">
-            <button onclick="toggleAccordion('${groupId}')" class="w-full flex justify-between items-center p-4 bg-white hover:bg-slate-50 transition-colors text-left">
-              <div class="flex items-center gap-3">
-                <div class="bg-emerald-100 text-emerald-700 p-2 rounded-lg">
-                  ${modo === 'empresa' 
-                    ? `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>`
-                    : `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>`
-                  }
-                </div>
-                <div>
-                  <h4 class="font-bold text-slate-800 text-sm">${chave}</h4>
-                  <p class="text-xs text-slate-500 mt-0.5">
-                    ${pessoas.length} ${pessoas.length === 1 ? 'vaga' : 'vagas'} 
-                    <span class="text-slate-300 mx-1">•</span> 
-                    <span class="font-semibold text-emerald-600">${pct}% da empresa</span>
-                  </p>
-                </div>
-              </div>
-              <svg id="icon-${groupId}" class="w-5 h-5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-            </button>
-            
-            <div id="content-${groupId}" class="hidden bg-slate-50 px-4 py-2 border-t border-slate-100 shadow-inner">
-              <ul class="space-y-2 py-2">
-        `;
-
-        pessoas.forEach(pessoa => {
+        let html = '';
+        filteredData.forEach(pessoa => {
           const theme = themes[pessoa.theme] || themes.blue;
-          const badgeText = modo === 'empresa' ? pessoa.title : (pessoa.empresa || 'Sem Local');
-          const subText = modo === 'empresa' ? pessoa.sub : (pessoa.sub || 'Sem subtítulo');
-
+          const empBadge = pessoa.empresa ? pessoa.empresa.split(/[,;]/)[0].trim() : 'S/ Local';
           html += `
-            <li class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-              <div class="flex flex-col">
-                <span class="font-semibold text-slate-800 text-sm">${pessoa.name}</span>
-                <span class="text-xs text-slate-500">${subText}</span>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+              <div class="flex justify-between items-start">
+                <div class="flex-1 overflow-hidden pr-2">
+                  <h4 class="font-bold text-slate-800 text-sm truncate cursor-pointer hover:text-emerald-600" onclick="fecharDashboardModal(); abrirPerfilModal(${pessoa.id})">${pessoa.name}</h4>
+                  <p class="text-xs text-slate-500 truncate mt-0.5">${pessoa.sub || 'Sem subtítulo'}</p>
+                </div>
+                <span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${theme.bg} ${theme.text} flex-shrink-0">
+                  ${pessoa.title}
+                </span>
               </div>
-              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${theme.bg} ${theme.text} text-right max-w-[120px] truncate">
-                ${badgeText}
-              </span>
-            </li>
+              <div class="mt-3 flex items-center gap-2 text-[10px] font-semibold text-slate-400">
+                <span class="bg-slate-100 px-2 py-1 rounded truncate max-w-[120px]"><svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>${empBadge}</span>
+              </div>
+            </div>
           `;
         });
-
-        html += `
-              </ul>
-            </div>
-          </div>
-        `;
-      });
-
-      if (chavesOrdenadas.length === 0) {
-         html = `<div class="p-6 text-center text-slate-500 text-sm">Ainda não existem colaboradores registados.</div>`;
+        listContainer.innerHTML = html;
       }
-
-      if(statsList) statsList.innerHTML = html;
-    }
+    };
 
     async function carregarDados() {
       showLoading(true, "A carregar Estrutura...");
@@ -802,7 +1087,6 @@
       }
       renderApp();
 
-      // Centraliza a tela suavemente no nó que acabou de ser expandido/recolhido
       setTimeout(() => {
         const el = document.getElementById(`card-${id}`);
         if (el) {
@@ -855,8 +1139,12 @@
           ${empresasHtml}
           ${actionButtonsHtml}
           <div class="font-semibold ${isCompact ? 'text-[8px] px-1.5' : 'text-[10px] px-2.5'} tracking-wider uppercase py-1 rounded-full ${isCompact ? 'mb-0' : 'mb-2'} min-w-[60px] text-center ${theme.bg} ${theme.text}">${node.title}</div>
-          ${!isCompact ? `<div class="text-sm font-bold text-slate-800 text-center w-full truncate" title="${node.name}">${node.name}</div>` : ''}
-          ${(!isCompact && node.sub) ? `<div class="text-xs text-slate-500 text-center w-full mt-1 font-medium truncate" title="${node.sub}">${node.sub}</div>` : ''}
+          
+          <div onclick="abrirPerfilModal(${node.id})" class="cursor-pointer hover:bg-slate-50 w-full rounded p-1 transition-colors group/nome" title="Ver Perfil">
+            ${!isCompact ? `<div class="text-sm font-bold text-slate-800 group-hover/nome:text-emerald-600 text-center w-full truncate flex items-center justify-center gap-1">${node.name} <svg class="w-3 h-3 opacity-0 group-hover/nome:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>` : `<div class="text-[9px] font-bold text-slate-800 text-center w-full truncate">${node.name}</div>`}
+            ${(!isCompact && node.sub) ? `<div class="text-xs text-slate-500 text-center w-full mt-0.5 font-medium truncate">${node.sub}</div>` : ''}
+          </div>
+
           ${!isCompact ? getSecondaryParentsHtml(node) : ''}
         </div>
       `;
@@ -877,14 +1165,12 @@
       const gapWidthRem = 1.5; 
       const lineWidth = (nodesInGroup.length - 1) * (cardWidthRem + gapWidthRem);
       
-      // Recolhe a variável de cor baseada no tema do nó atual (subordinado)
       const themeObj = themes[nodesInGroup[0].theme] || themes.blue;
       const lineColorHex = themeObj.hex;
 
       let cardsHtml = `<div class="relative flex gap-6 justify-center ${isMulti ? 'pt-6 pb-6' : 'mt-3 mb-4'} group/group">`;
       
       if (isMulti) {
-          // As linhas internas de múltiplos cartões também herdam a cor nativa
           cardsHtml += `<div class="absolute top-0 left-1/2 -translate-x-1/2 h-0 border-t-2" style="width: ${lineWidth}rem; border-color: var(--line-color, #cbd5e1);"></div>`;
           if (hasChildren && !isCollapsed) {
               cardsHtml += `<div class="absolute bottom-0 left-1/2 -translate-x-1/2 h-0 border-b-2" style="width: ${lineWidth}rem; border-color: var(--line-color, #cbd5e1);"></div>`;
@@ -966,29 +1252,24 @@
           }
       }
 
-      // Injeta a cor nativa --line-color no <li> pai que renderiza este ramo
       return `<li style="--line-color: ${lineColorHex}">${cardsHtml}${childrenHtml}</li>`;
     }
 
     function updateFormOptions() {
-      // Popular Nomes existentes
       const nomesList = document.getElementById('nomes-list');
       const uniqueNomes = [...new Set(orgData.map(n => n.name).filter(Boolean))].sort();
       if(nomesList) nomesList.innerHTML = uniqueNomes.map(nome => `<option value="${nome}"></option>`).join('');
 
-      // Popular Cargos/Funções existentes
       const cargosList = document.getElementById('cargos-list');
       const uniqueCargos = [...new Set(orgData.map(n => n.title).filter(Boolean))].sort();
       if(cargosList) cargosList.innerHTML = uniqueCargos.map(cargo => `<option value="${cargo}"></option>`).join('');
 
-      // Popular Empresas
       const empresasList = document.getElementById('empresas-list');
       const existingEmpresas = [...new Set(orgData.map(n => n.empresa).filter(Boolean).flatMap(e => e.split(/[,;]/).map(s => s.trim())))].filter(Boolean);
       const baseEmpresas = ["SPG Sede", "SPG Oásis", "SPG Estufa"];
       const uniqueEmpresas = [...new Set([...baseEmpresas, ...existingEmpresas])].sort();
       if(empresasList) empresasList.innerHTML = uniqueEmpresas.map(emp => `<option value="${emp}"></option>`).join('');
 
-      // Gerar a Lista Fixa de Caixas de Seleção para Líderes (Responde a quem?)
       const parentContainer = document.getElementById('parent-checkbox-list');
       if (parentContainer) {
         if (orgData.length === 0) {
@@ -1016,7 +1297,6 @@
       }
     }
 
-    // Função rápida para selecionar apenas um pai/líder (Botão "Somente")
     window.selecionarSomentePai = function(id) {
       const checkboxes = document.querySelectorAll('.parent-checkbox');
       checkboxes.forEach(cb => {
@@ -1056,9 +1336,16 @@
       document.getElementById('subtitulo').value = node.sub || "";
       document.getElementById('tema').value = node.theme;
       
+      document.getElementById('nascimento').value = formatarDataParaInput(node.nascimento);
+      document.getElementById('contratacao').value = formatarDataParaInput(node.contratacao);
+
+      let meta = {};
+      try { meta = node.metadados ? JSON.parse(node.metadados) : {}; } catch(e) {}
+      document.getElementById('sexo').value = meta.sexo || "";
+      document.getElementById('funcoes').value = meta.funcoes || "";
+
       document.getElementById('agrupar').checked = node.grouped || false;
 
-      // Preecher checkboxes baseando-se em node.parent
       const parentsArray = node.parent ? String(node.parent).split(/[,;]/).map(p => p.trim()) : [];
       document.querySelectorAll('.parent-checkbox').forEach(cb => {
         cb.checked = parentsArray.includes(String(cb.value));
@@ -1072,6 +1359,7 @@
       
       const sidebar = document.getElementById('sidebar');
       if (sidebar.classList.contains('hidden')) toggleSidebar();
+      switchSidebarTab('hierarquia'); 
     };
 
     window.cancelEdit = function() {
@@ -1079,7 +1367,6 @@
       document.getElementById('addNodeForm').reset();
       document.getElementById('agrupar').checked = false; 
       
-      // Limpa checkboxes
       document.querySelectorAll('.parent-checkbox').forEach(cb => cb.checked = false);
       
       const searchParentInput = document.getElementById('searchParent');
@@ -1093,6 +1380,7 @@
       btn.classList.replace('bg-blue-600', 'bg-emerald-600');
       btn.classList.replace('hover:bg-blue-700', 'hover:bg-emerald-700');
       document.getElementById('cancelEditBtn').classList.add('hidden');
+      switchSidebarTab('hierarquia');
     };
 
     document.getElementById('addNodeForm').addEventListener('submit', async function(e) {
@@ -1102,11 +1390,15 @@
         return;
       }
       
-      // Pega todos os checkboxes marcados para a hierarquia
       const checkboxes = document.querySelectorAll('.parent-checkbox:checked');
       const selectedOptions = Array.from(checkboxes).map(cb => cb.value);
       const parentVal = selectedOptions.length > 0 ? selectedOptions.join(';') : null;
       
+      const metadadosObj = {
+        sexo: document.getElementById('sexo').value,
+        funcoes: document.getElementById('funcoes').value.trim()
+      };
+
       const newNode = {
         id: editingNodeId ? editingNodeId : Date.now(),
         name: document.getElementById('nome').value,
@@ -1115,7 +1407,11 @@
         parent: parentVal,
         theme: document.getElementById('tema').value,
         empresa: document.getElementById('empresa').value,
-        grouped: document.getElementById('agrupar').checked
+        grouped: document.getElementById('agrupar').checked,
+        
+        nascimento: document.getElementById('nascimento').value,
+        contratacao: document.getElementById('contratacao').value,
+        metadados: JSON.stringify(metadadosObj) 
       };
 
       if (editingNodeId) {
@@ -1161,7 +1457,6 @@
     document.addEventListener("DOMContentLoaded", () => {
       carregarDados();
 
-      // Ajustado evento de pesquisa do líder para filtrar as divs em vez de options do select
       const searchParentInput = document.getElementById('searchParent');
       if (searchParentInput) {
         searchParentInput.addEventListener('input', function(e) {
