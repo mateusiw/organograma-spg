@@ -12,18 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Flatpickr (Calendário Moderno) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
-
-  <!-- Tom Select (Listas Suspensas Modernas) -->
-  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-
   <style>
     /* INTELIGÊNCIA DAS LINHAS CSS COM VARIÁVEIS NATIVAS */
     .tree ul { padding-top: 24px; position: relative; display: flex; justify-content: center; transition: all 0.5s; }
@@ -61,59 +50,6 @@
     .checkbox-list-scroll::-webkit-scrollbar { width: 4px; }
     .checkbox-list-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
     .checkbox-list-scroll::-webkit-scrollbar-track { background: transparent; }
-
-    /* ========== ESTILOS DOS PLUGINS (Tailwind UI Override) ========== */
-    
-    /* Tom Select */
-    .ts-wrapper .ts-control {
-      background-color: #f8fafc !important; /* bg-slate-50 */
-      border: 1px solid #e2e8f0 !important; /* border-slate-200 */
-      border-radius: 0.5rem !important; /* rounded-lg */
-      padding: 0.5rem 0.75rem !important;
-      font-size: 0.875rem !important; /* text-sm */
-      color: #334155 !important; /* text-slate-700 */
-      box-shadow: none !important;
-      transition: all 0.2s;
-    }
-    .ts-wrapper.focus .ts-control {
-      border-color: #10b981 !important; /* focus:ring-emerald-500 */
-      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
-      outline: none;
-    }
-    .ts-dropdown {
-      border-radius: 0.5rem !important;
-      border: 1px solid #e2e8f0 !important;
-      font-size: 0.875rem !important;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
-      z-index: 9999 !important; /* Sempre sobreposto na sidebar */
-    }
-    .ts-dropdown .active {
-      background-color: #ecfdf5 !important;
-      color: #047857 !important;
-    }
-    .ts-wrapper.multi .ts-control > div {
-      background-color: #d1fae5 !important; /* tag selecionada */
-      color: #065f46 !important;
-      border: 1px solid #10b981 !important;
-      border-radius: 0.25rem !important;
-      padding: 2px 6px !important;
-    }
-
-    /* Flatpickr */
-    .flatpickr-calendar {
-      font-family: inherit !important;
-      border-radius: 0.75rem !important;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
-      border: 1px solid #e2e8f0 !important;
-      padding: 4px;
-    }
-    .flatpickr-day.selected {
-      background: #10b981 !important;
-      border-color: #10b981 !important;
-    }
-    .flatpickr-input[readonly] {
-      background-color: #f8fafc;
-    }
   </style>
 </head>
 <body id="body-container" class="font-sans text-slate-800 flex flex-col h-screen overflow-hidden bg-[url('https://i.imgur.com/zaP8fZ8.jpeg')] bg-cover bg-center bg-fixed transition-colors duration-500">
@@ -129,13 +65,13 @@
 
   <!-- Modal de Perfil Detalhado -->
   <div id="profile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] hidden items-center justify-center p-4">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col transform transition-all">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto transform transition-all">
       <div class="relative h-24 bg-gradient-to-r from-emerald-500 to-teal-600 flex-shrink-0">
-        <button onclick="fecharPerfilModal()" class="absolute top-4 right-4 text-white/80 hover:text-white bg-black/10 hover:bg-black/20 p-1.5 rounded-full transition-colors" title="Fechar Perfil">
+        <button onclick="fecharPerfilModal()" class="absolute top-4 right-4 text-white/80 hover:text-white bg-black/10 hover:bg-black/20 p-1.5 rounded-full transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
-      <div class="px-6 pb-6 overflow-y-auto flex-1 relative">
+      <div class="px-6 pb-8 relative">
         <div class="mt-6 flex justify-between items-start">
           <div>
             <h2 id="perf-nome" class="text-xl font-bold text-slate-800">A carregar...</h2>
@@ -160,13 +96,6 @@
             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">Funções Detalhadas</p>
             <p id="perf-funcoes" class="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">-</p>
           </div>
-        </div>
-
-        <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
-          <button id="btn-voltar-perfil" onclick="fecharPerfilModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            Voltar
-          </button>
         </div>
       </div>
     </div>
@@ -257,7 +186,7 @@
         <!-- KPIs -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 bg-slate-50 border-b border-slate-200">
           <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-center">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Equipa</span>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Equipe</span>
             <span id="dash-kpi-total" class="text-2xl font-black text-slate-800 mt-1">0</span>
           </div>
           <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-center">
@@ -291,19 +220,8 @@
         </div>
       </div>
 
-      <!-- Área Flexível (Listagens e Tabelas Analíticas) -->
-      <div class="flex-1 overflow-y-auto p-5 bg-slate-50/50 flex flex-col gap-6" id="dash-scroll-area">
-        
-        <!-- Nova Seção de Análise (Cargos e Tempo de Empresa) -->
-        <div id="dash-analise-container" class="grid grid-cols-1 lg:grid-cols-2 gap-4 hidden">
-           <!-- Renderizado dinamicamente pelo JS -->
-        </div>
-
-        <div id="dash-lista-pessoas-wrapper" class="hidden">
-           <h4 id="dash-titulo-lista" class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 px-1 border-b border-slate-200 pb-2">Lista de Colaboradores</h4>
-        </div>
-        
-        <!-- Grid de Cards de Pessoas -->
+      <!-- Área de Listagem Global (Reutilizada em todas as abas) -->
+      <div class="flex-1 overflow-y-auto p-5 bg-slate-50/50">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="dash-lista-pessoas">
           <!-- Renderizado dinamicamente pelo JS -->
         </div>
@@ -336,7 +254,7 @@
       <!-- Botão Dashboard -->
       <button onclick="abrirDashboardModal()" class="bg-slate-50 p-2 px-3 flex items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Abrir Dashboard de Produção">
         <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-        <span class="text-xs uppercase tracking-wider font-bold hidden md:block">Métricas</span>
+        <span class="text-xs uppercase tracking-wider font-bold hidden md:block">Dashboard</span>
       </button>
 
       <!-- Botão de Acesso (Login/Painel) -->
@@ -394,20 +312,24 @@
               </h3>
               <div>
                 <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Nome da Pessoa <span class="text-red-500">*</span></label>
-                <!-- Alterado para select para receber o TomSelect -->
-                <select id="nome" required placeholder="Ex: João Victor"></select>
+                <input type="text" id="nome" list="nomes-list" required placeholder="Ex: João Victor" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+                <datalist id="nomes-list"></datalist>
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Setor / Função principal <span class="text-red-500">*</span></label>
-                <!-- Alterado para select para receber o TomSelect -->
-                <select id="cargo" required placeholder="Ex: Compras"></select>
+                <input type="text" id="cargo" list="cargos-list" required placeholder="Ex: Compras" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+                <datalist id="cargos-list"></datalist>
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">
-                  Empresa / Unidade <span class="text-slate-400 normal-case font-normal">(Múltiplas suportadas)</span>
+                  Empresa / Unidade <span class="text-slate-400 normal-case font-normal">(Use vírgula para várias)</span>
                 </label>
-                <!-- TomSelect no input transforma em input de tags -->
-                <input type="text" id="empresa" placeholder="Ex: SPG Sede, SPG Oásis">
+                <input type="text" id="empresa" list="empresas-list" placeholder="Ex: SPG Sede, SPG Oásis" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+                <datalist id="empresas-list">
+                  <option value="SPG Sede"></option>
+                  <option value="SPG Oásis"></option>
+                  <option value="SPG Estufa"></option>
+                </datalist>
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Subtítulo (Opcional)</label>
@@ -446,7 +368,7 @@
               </h3>
               <div>
                 <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Cor do Departamento</label>
-                <select id="tema" placeholder="Selecione a cor...">
+                <select id="tema" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
                   <option value="red">Vermelho (Gerente Geral)</option>
                   <option value="indigo">Índigo (Diretores)</option>
                   <option value="yellow">Amarelo (Sub-Gerente)</option>
@@ -477,12 +399,11 @@
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Nascimento</label>
-                  <!-- Alterado tipo para text para permitir o input rápido junto do calendário -->
-                  <input type="text" id="nascimento" placeholder="dd/mm/aaaa" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+                  <input type="date" id="nascimento" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Sexo</label>
-                  <select id="sexo" placeholder="Informe o sexo...">
+                  <select id="sexo" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
                     <option value="">Não Informar</option>
                     <option value="Masculino">Masculino</option>
                     <option value="Feminino">Feminino</option>
@@ -500,8 +421,7 @@
               </h3>
               <div>
                 <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Contratação</label>
-                <!-- Alterado tipo para text para permitir o input rápido junto do calendário -->
-                <input type="text" id="contratacao" placeholder="dd/mm/aaaa" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+                <input type="date" id="contratacao" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
               </div>
             </div>
 
@@ -552,11 +472,6 @@
     let isCompactMode = false;
     let currentDashboardTab = 'geral';
     let countdownInterval = null;
-    let openedFromDashboard = false;
-
-    // Variáveis Globais de Instância (Bibliotecas)
-    let tsNome, tsCargo, tsEmpresa, tsTema, tsSexo;
-    let fpNascimento, fpContratacao;
 
     const themes = {
       green:  { bg: 'bg-emerald-100', text: 'text-emerald-700', ring: 'ring-emerald-100', hex: '#10b981' },
@@ -572,39 +487,6 @@
       cyan:   { bg: 'bg-cyan-100',    text: 'text-cyan-700',    ring: 'ring-cyan-100',    hex: '#06b6d4' },
       violet: { bg: 'bg-violet-100',  text: 'text-violet-700',  ring: 'ring-violet-100',  hex: '#8b5cf6' }
     };
-
-    function initPlugins() {
-      // Configuração Calendários (Flatpickr)
-      const fpConfig = {
-        locale: "pt",
-        dateFormat: "Y-m-d", // Formato para o script
-        altInput: true,
-        altFormat: "d/m/Y", // Visual para o utilizador
-        allowInput: true, // Permite digitar "12/05/1990" super rápido
-      };
-      fpNascimento = flatpickr("#nascimento", fpConfig);
-      fpContratacao = flatpickr("#contratacao", fpConfig);
-
-      // Configuração Selects (TomSelect)
-      const tsCreateConfig = {
-        create: true, // Permite digitar novo texto (substitui o comportamento de list/datalist)
-        sortField: { field: "text", direction: "asc" }
-      };
-
-      tsNome = new TomSelect("#nome", tsCreateConfig);
-      tsCargo = new TomSelect("#cargo", tsCreateConfig);
-      
-      // Multi-input com formato de tags limpas
-      tsEmpresa = new TomSelect("#empresa", {
-        create: true,
-        plugins: ['remove_button'],
-        delimiter: ',',
-      });
-
-      // Menus fechados normais, sem digitar
-      tsTema = new TomSelect("#tema", { controlInput: null });
-      tsSexo = new TomSelect("#sexo", { controlInput: null });
-    }
 
     function showLoading(show, message = "A processar...") {
       const loader = document.getElementById('loading');
@@ -636,19 +518,13 @@
       }
     };
 
-    function parseLocalDate(dateStr) {
-      if (!dateStr) return null;
-      const parts = dateStr.split('T')[0].split('-');
-      if (parts.length !== 3) return null;
-      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-    }
-
     function calcularIdade(dataStr) {
       if (!dataStr) return 'Não informada';
-      const nascimento = parseLocalDate(dataStr);
-      if (!nascimento || isNaN(nascimento.getTime())) return 'Inválida';
-      
+      const dataValida = dataStr.split('T')[0];
       const hoje = new Date();
+      const nascimento = new Date(dataValida);
+      if (isNaN(nascimento.getTime())) return 'Inválida';
+      
       let idade = hoje.getFullYear() - nascimento.getFullYear();
       const m = hoje.getMonth() - nascimento.getMonth();
       if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
@@ -659,10 +535,11 @@
 
     function calcularIdadeNumerica(dataStr) {
       if (!dataStr) return null;
-      const nascimento = parseLocalDate(dataStr);
-      if (!nascimento || isNaN(nascimento.getTime())) return null;
-      
+      const dataValida = dataStr.split('T')[0];
       const hoje = new Date();
+      const nascimento = new Date(dataValida);
+      if (isNaN(nascimento.getTime())) return null;
+      
       let idade = hoje.getFullYear() - nascimento.getFullYear();
       const m = hoje.getMonth() - nascimento.getMonth();
       if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
@@ -673,10 +550,11 @@
 
     function calcularTempoEmpresa(dataStr) {
       if (!dataStr) return 'Não informada';
-      const contratacao = parseLocalDate(dataStr);
-      if (!contratacao || isNaN(contratacao.getTime())) return 'Inválida';
-      
+      const dataValida = dataStr.split('T')[0];
       const hoje = new Date();
+      const contratacao = new Date(dataValida);
+      if (isNaN(contratacao.getTime())) return 'Inválida';
+      
       let anos = hoje.getFullYear() - contratacao.getFullYear();
       let meses = hoje.getMonth() - contratacao.getMonth();
 
@@ -714,8 +592,8 @@
     }
 
     function getNextBirthday(nascimentoStr) {
-      const birthDate = parseLocalDate(nascimentoStr);
-      if (!birthDate || isNaN(birthDate.getTime())) return null;
+      const birthDate = new Date(nascimentoStr.split('T')[0]);
+      if (isNaN(birthDate.getTime())) return null;
 
       const now = new Date();
       let nextBday = new Date(now.getFullYear(), birthDate.getMonth(), birthDate.getDate());
@@ -739,15 +617,9 @@
       }
     }
 
-    window.abrirPerfilModal = function(id, fromDashboard = false) {
+    window.abrirPerfilModal = function(id) {
       const node = orgData.find(n => n.id === id);
       if (!node) return;
-
-      openedFromDashboard = fromDashboard;
-      if (fromDashboard) {
-        document.getElementById('dashboard-modal').classList.add('hidden');
-        document.getElementById('dashboard-modal').classList.remove('flex');
-      }
 
       document.getElementById('perf-nome').textContent = node.name || 'Sem nome';
       document.getElementById('perf-cargo').textContent = node.title || 'Sem cargo';
@@ -774,14 +646,6 @@
         elSexo.classList.add('hidden');
       }
 
-      // Ajusta o texto do botão inferior de acordo com o contexto
-      const btnVoltar = document.getElementById('btn-voltar-perfil');
-      if (btnVoltar) {
-        btnVoltar.innerHTML = fromDashboard ? 
-          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Voltar ao Dashboard' : 
-          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> Fechar';
-      }
-
       const modal = document.getElementById('profile-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
@@ -791,12 +655,6 @@
       const modal = document.getElementById('profile-modal');
       modal.classList.add('hidden');
       modal.classList.remove('flex');
-
-      if (openedFromDashboard) {
-        document.getElementById('dashboard-modal').classList.remove('hidden');
-        document.getElementById('dashboard-modal').classList.add('flex');
-        openedFromDashboard = false; // Reset
-      }
     };
 
     function toggleCompactMode() {
@@ -1075,9 +933,6 @@
       currentDashboardTab = tab;
       const btnGeral = document.getElementById('tab-dash-geral');
       const btnAniv = document.getElementById('tab-dash-aniv');
-      
-      const analiseContainer = document.getElementById('dash-analise-container');
-      const listPessoasWrapper = document.getElementById('dash-lista-pessoas-wrapper');
       const kpiFiltersSection = document.getElementById('dash-kpis-filters');
       
       const activeClass = "flex-1 py-2 px-3 text-xs font-bold rounded-md bg-white text-slate-800 shadow-sm border border-slate-200 transition-all flex items-center justify-center gap-2";
@@ -1088,13 +943,11 @@
         btnAniv.className = inactiveClass;
         kpiFiltersSection.style.display = 'block';
         clearCountdown();
-        updateDashboard(); // Restaura as tabelas analíticas e a lista filtrada
+        updateDashboard();
       } else if (tab === 'aniversarios') {
         btnGeral.className = inactiveClass;
         btnAniv.className = activeClass;
         kpiFiltersSection.style.display = 'none';
-        analiseContainer.style.display = 'none';
-        listPessoasWrapper.style.display = 'none';
         renderAniversariantes();
       }
     };
@@ -1121,30 +974,29 @@
       const topPerson = upcomingBirthdays[0];
       const themeTop = themes[topPerson.theme] || themes.blue;
       
-      // Formatar a data exata do próximo aniversário para o Top 1
-      const dTop = String(topPerson.nextBday.getDate()).padStart(2, '0');
-      const mTop = String(topPerson.nextBday.getMonth() + 1).padStart(2, '0');
-      const yTop = topPerson.nextBday.getFullYear();
-      const topDateStr = `${dTop}/${mTop}/${yTop}`;
-      
       let html = `
+        <div class="col-span-full flex justify-end">
+          <button onclick="customAlert('Existem ${upcomingBirthdays.length} aniversariantes na lista.', 'Contagem de Aniversariantes')" class="inline-flex items-center gap-2 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200 shadow-sm px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            Total Aniversariantes: ${upcomingBirthdays.length}
+          </button>
+        </div>
         <div class="col-span-full bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg mb-4 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden">
           <div class="absolute -right-10 -top-10 opacity-10 pointer-events-none">
             <svg class="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h-2zm0 6h2v2h-2z"/></svg>
           </div>
           <div class="z-10 text-center sm:text-left">
               <span class="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest backdrop-blur-sm border border-white/20 shadow-sm">Próximo Aniversariante</span>
-              <h2 class="text-3xl font-black mt-3 mb-1 cursor-pointer hover:underline" onclick="abrirPerfilModal(${topPerson.id}, true)">${topPerson.name}</h2>
+              <h2 class="text-3xl font-black mt-3 mb-1 cursor-pointer hover:underline" onclick="fecharDashboardModal(); abrirPerfilModal(${topPerson.id})">${topPerson.name}</h2>
               <p class="text-emerald-50 text-sm font-medium uppercase tracking-wider">${topPerson.title}</p>
               <div class="mt-4 flex flex-wrap justify-center sm:justify-start gap-2">
                 <span class="bg-black/10 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-black/5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg> ${topPerson.ageToTurn} anos de vida</span>
                 <span class="bg-black/10 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-black/5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> ${calcularTempoEmpresa(topPerson.contratacao)} de empresa</span>
               </div>
           </div>
-          <div class="z-10 bg-white/10 p-5 rounded-2xl text-center min-w-[220px] backdrop-blur-sm border border-white/20 shadow-inner flex flex-col items-center">
+          <div class="z-10 bg-white/10 p-5 rounded-2xl text-center min-w-[220px] backdrop-blur-sm border border-white/20 shadow-inner">
               <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-100 mb-2">Faltam</p>
               <div id="top-birthday-countdown" class="text-lg font-black font-mono tracking-wide text-white drop-shadow-md">A calcular...</div>
-              <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-200 mt-3 pt-2 w-full border-t border-white/20">Data: ${topDateStr}</p>
           </div>
         </div>
       `;
@@ -1185,9 +1037,7 @@
         html += `<div class="col-span-full mt-2"><h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 pb-2">Próximos meses</h4></div>`;
 
         rest.forEach(pessoa => {
-          const dRest = String(pessoa.nextBday.getDate()).padStart(2, '0');
-          const mRest = String(pessoa.nextBday.getMonth() + 1).padStart(2, '0');
-          const yRest = pessoa.nextBday.getFullYear();
+          const bdayDate = formatarDataBR(pessoa.nascimento).substring(0, 5);
           
           const distanceRest = pessoa.nextBday.getTime() - new Date().getTime();
           const diffDays = Math.ceil(distanceRest / (1000 * 60 * 60 * 24));
@@ -1199,12 +1049,11 @@
           html += `
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow flex items-center justify-between">
               <div class="flex items-center gap-4">
-                <div class="bg-slate-50 border border-slate-100 rounded-lg p-2 text-center min-w-[70px] shadow-inner">
-                  <span class="block text-sm font-black text-slate-700">${dRest}/${mRest}</span>
-                  <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">${yRest}</span>
+                <div class="bg-slate-50 border border-slate-100 rounded-lg p-2 text-center min-w-[50px] shadow-inner">
+                  <span class="block text-xs font-black text-slate-700">${bdayDate}</span>
                 </div>
                 <div>
-                  <h4 class="font-bold text-slate-800 text-sm cursor-pointer hover:text-emerald-600" onclick="abrirPerfilModal(${pessoa.id}, true)">${pessoa.name}</h4>
+                  <h4 class="font-bold text-slate-800 text-sm cursor-pointer hover:text-emerald-600" onclick="fecharDashboardModal(); abrirPerfilModal(${pessoa.id})">${pessoa.name}</h4>
                   <p class="text-[10px] text-slate-500 mt-0.5 font-bold uppercase tracking-wider">${pessoa.ageToTurn} anos <span class="mx-1 text-slate-300">•</span> <span class="text-emerald-600">${faltaText}</span></p>
                 </div>
               </div>
@@ -1314,96 +1163,7 @@
       document.getElementById('dash-kpi-masc').textContent = `${pctMasc}%`;
       document.getElementById('dash-kpi-fem').textContent = `${pctFem}%`;
 
-      // -------------------------------------------------------------
-      // TABELAS DE ANÁLISE: DISTRIBUIÇÃO E RANKING (TEMPO DE EMPRESA)
-      // -------------------------------------------------------------
-      const analiseContainer = document.getElementById('dash-analise-container');
-      const listPessoasWrapper = document.getElementById('dash-lista-pessoas-wrapper');
-      
-      if (filteredData.length > 0) {
-        // 1. Percentual de Cargos
-        const cargosCount = {};
-        filteredData.forEach(n => {
-            const c = n.title.trim() || 'Sem Cargo';
-            cargosCount[c] = (cargosCount[c] || 0) + 1;
-        });
-        const totalPessoas = filteredData.length;
-        const cargosArray = Object.keys(cargosCount).map(c => ({
-            cargo: c,
-            count: cargosCount[c],
-            pct: ((cargosCount[c] / totalPessoas) * 100).toFixed(1)
-        })).sort((a, b) => b.count - a.count);
-
-        let htmlCargos = `
-          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col h-64">
-            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg> Distribuição por Cargo</h4>
-            <div class="overflow-y-auto flex-1 pr-2 checkbox-list-scroll">
-              <table class="w-full text-left text-xs">
-                <thead class="sticky top-0 bg-white shadow-sm z-10">
-                  <tr class="text-slate-400 border-b border-slate-100">
-                    <th class="pb-2 font-bold uppercase">Cargo / Função</th>
-                    <th class="pb-2 font-bold uppercase text-center w-16">Qtd</th>
-                    <th class="pb-2 font-bold uppercase text-right w-16">%</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50">
-                  ${cargosArray.map(c => `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                      <td class="py-2.5 font-semibold text-slate-700 truncate max-w-[150px]" title="${c.cargo}">${c.cargo}</td>
-                      <td class="py-2.5 text-center text-slate-600">${c.count}</td>
-                      <td class="py-2.5 text-right font-bold text-emerald-600">${c.pct}%</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        `;
-
-        // 2. Ranking de Tempo de Empresa (do mais antigo)
-        const rankingTempo = filteredData.map(n => {
-            if (!n.contratacao) return null;
-            const contratacao = parseLocalDate(n.contratacao);
-            if (!contratacao || isNaN(contratacao.getTime())) return null;
-            return {
-                ...n,
-                contratacaoDate: contratacao,
-                tempoStr: calcularTempoEmpresa(n.contratacao)
-            };
-        }).filter(Boolean).sort((a, b) => a.contratacaoDate.getTime() - b.contratacaoDate.getTime());
-
-        let htmlTempo = `
-          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col h-64">
-            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Ranking: Mais Antigos</h4>
-            <div class="overflow-y-auto flex-1 pr-2 checkbox-list-scroll">
-              <ul class="space-y-2">
-                ${rankingTempo.map((p, idx) => `
-                  <li class="flex items-center justify-between p-2 rounded-lg ${idx === 0 ? 'bg-amber-50 border border-amber-100' : 'hover:bg-slate-50 border border-transparent transition-colors'}">
-                    <div class="flex items-center gap-3 overflow-hidden">
-                      <span class="text-xs font-black ${idx === 0 ? 'text-amber-600' : 'text-slate-400'} w-4 text-center">#${idx+1}</span>
-                      <div class="truncate cursor-pointer hover:underline" onclick="abrirPerfilModal(${p.id}, true)">
-                        <p class="text-xs font-bold ${idx === 0 ? 'text-amber-900' : 'text-slate-700'} truncate">${p.name}</p>
-                        <p class="text-[9px] uppercase tracking-wider text-slate-500 truncate">${p.title}</p>
-                      </div>
-                    </div>
-                    <span class="text-[10px] font-bold ${idx === 0 ? 'text-amber-600 bg-amber-100' : 'text-slate-600 bg-slate-100'} px-2 py-1 rounded-full whitespace-nowrap">${p.tempoStr}</span>
-                  </li>
-                `).join('')}
-                ${rankingTempo.length === 0 ? '<li class="text-xs text-slate-400 p-2 text-center">Nenhum dado de contratação encontrado</li>' : ''}
-              </ul>
-            </div>
-          </div>
-        `;
-
-        analiseContainer.innerHTML = htmlCargos + htmlTempo;
-        analiseContainer.style.display = 'grid';
-        listPessoasWrapper.style.display = 'block';
-      } else {
-        analiseContainer.style.display = 'none';
-        listPessoasWrapper.style.display = 'none';
-      }
-
-      // Renderizar Lista Resultante Principal
+      // Renderizar Lista Resultante
       const listContainer = document.getElementById('dash-lista-pessoas');
       if (filteredData.length === 0) {
         listContainer.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500">Nenhum colaborador encontrado com estes filtros.</div>`;
@@ -1419,7 +1179,7 @@
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
               <div class="flex justify-between items-start">
                 <div class="flex-1 overflow-hidden pr-2">
-                  <h4 class="font-bold text-slate-800 text-sm truncate cursor-pointer hover:text-emerald-600" onclick="abrirPerfilModal(${pessoa.id}, true)">${pessoa.name}</h4>
+                  <h4 class="font-bold text-slate-800 text-sm truncate cursor-pointer hover:text-emerald-600" onclick="fecharDashboardModal(); abrirPerfilModal(${pessoa.id})">${pessoa.name}</h4>
                   <p class="text-xs text-slate-500 truncate mt-0.5">${pessoa.sub || 'Sem subtítulo'}</p>
                 </div>
                 <span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${theme.bg} ${theme.text} flex-shrink-0">
@@ -1561,7 +1321,7 @@
           ${actionButtonsHtml}
           <div class="font-semibold ${isCompact ? 'text-[8px] px-1.5' : 'text-[10px] px-2.5'} tracking-wider uppercase py-1 rounded-full ${isCompact ? 'mb-0' : 'mb-2'} min-w-[60px] text-center ${theme.bg} ${theme.text}">${node.title}</div>
           
-          <div onclick="abrirPerfilModal(${node.id}, false)" class="cursor-pointer hover:bg-slate-50 w-full rounded p-1 transition-colors group/nome" title="Ver Perfil">
+          <div onclick="abrirPerfilModal(${node.id})" class="cursor-pointer hover:bg-slate-50 w-full rounded p-1 transition-colors group/nome" title="Ver Perfil">
             ${!isCompact ? `<div class="text-sm font-bold text-slate-800 group-hover/nome:text-emerald-600 text-center w-full truncate flex items-center justify-center gap-1">${node.name} <svg class="w-3 h-3 opacity-0 group-hover/nome:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>` : `<div class="text-[9px] font-bold text-slate-800 text-center w-full truncate">${node.name}</div>`}
             ${(!isCompact && node.sub) ? `<div class="text-xs text-slate-500 text-center w-full mt-0.5 font-medium truncate">${node.sub}</div>` : ''}
           </div>
@@ -1677,30 +1437,20 @@
     }
 
     function updateFormOptions() {
-      // 1. Atualizar Opções do TomSelect: Nomes
+      const nomesList = document.getElementById('nomes-list');
       const uniqueNomes = [...new Set(orgData.map(n => n.name).filter(Boolean))].sort();
-      if (tsNome) {
-        tsNome.clearOptions();
-        tsNome.addOption(uniqueNomes.map(nome => ({value: nome, text: nome})));
-      }
+      if(nomesList) nomesList.innerHTML = uniqueNomes.map(nome => `<option value="${nome}"></option>`).join('');
 
-      // 2. Atualizar Opções do TomSelect: Cargos
+      const cargosList = document.getElementById('cargos-list');
       const uniqueCargos = [...new Set(orgData.map(n => n.title).filter(Boolean))].sort();
-      if (tsCargo) {
-        tsCargo.clearOptions();
-        tsCargo.addOption(uniqueCargos.map(cargo => ({value: cargo, text: cargo})));
-      }
+      if(cargosList) cargosList.innerHTML = uniqueCargos.map(cargo => `<option value="${cargo}"></option>`).join('');
 
-      // 3. Atualizar Opções do TomSelect: Empresas
+      const empresasList = document.getElementById('empresas-list');
       const existingEmpresas = [...new Set(orgData.map(n => n.empresa).filter(Boolean).flatMap(e => e.split(/[,;]/).map(s => s.trim())))].filter(Boolean);
       const baseEmpresas = ["SPG Sede", "SPG Oásis", "SPG Estufa"];
       const uniqueEmpresas = [...new Set([...baseEmpresas, ...existingEmpresas])].sort();
-      if (tsEmpresa) {
-        tsEmpresa.clearOptions();
-        tsEmpresa.addOption(uniqueEmpresas.map(emp => ({value: emp, text: emp})));
-      }
+      if(empresasList) empresasList.innerHTML = uniqueEmpresas.map(emp => `<option value="${emp}"></option>`).join('');
 
-      // Atualizar lista de pais
       const parentContainer = document.getElementById('parent-checkbox-list');
       if (parentContainer) {
         if (orgData.length === 0) {
@@ -1761,27 +1511,20 @@
       if (!node) return;
 
       editingNodeId = id;
-      
-      // TomSelect Updates
-      if (tsNome) tsNome.setValue(node.name);
-      if (tsCargo) tsCargo.setValue(node.title);
-      if (tsEmpresa) {
-        const empVals = node.empresa ? node.empresa.split(/[,;]/).map(e => e.trim()) : [];
-        tsEmpresa.setValue(empVals);
-      }
-      if (tsTema) tsTema.setValue(node.theme);
-      
+      document.getElementById('nome').value = node.name;
+      document.getElementById('cargo').value = node.title;
+      document.getElementById('empresa').value = node.empresa || "";
       document.getElementById('subtitulo').value = node.sub || "";
+      document.getElementById('tema').value = node.theme;
       
-      // Flatpickr Updates
-      if (fpNascimento && node.nascimento) fpNascimento.setDate(formatarDataParaInput(node.nascimento));
-      if (fpContratacao && node.contratacao) fpContratacao.setDate(formatarDataParaInput(node.contratacao));
+      document.getElementById('nascimento').value = formatarDataParaInput(node.nascimento);
+      document.getElementById('contratacao').value = formatarDataParaInput(node.contratacao);
 
       let meta = {};
       try { meta = node.metadados ? JSON.parse(node.metadados) : {}; } catch(e) {}
-      if (tsSexo) tsSexo.setValue(meta.sexo || "");
-      
+      document.getElementById('sexo').value = meta.sexo || "";
       document.getElementById('funcoes').value = meta.funcoes || "";
+
       document.getElementById('agrupar').checked = node.grouped || false;
 
       const parentsArray = node.parent ? String(node.parent).split(/[,;]/).map(p => p.trim()) : [];
@@ -1803,16 +1546,6 @@
     window.cancelEdit = function() {
       editingNodeId = null;
       document.getElementById('addNodeForm').reset();
-      
-      // Reset TomSelect & Flatpickr
-      if (tsNome) tsNome.clear();
-      if (tsCargo) tsCargo.clear();
-      if (tsEmpresa) tsEmpresa.clear();
-      if (tsTema) tsTema.setValue('red');
-      if (tsSexo) tsSexo.clear();
-      if (fpNascimento) fpNascimento.clear();
-      if (fpContratacao) fpContratacao.clear();
-
       document.getElementById('agrupar').checked = false; 
       
       document.querySelectorAll('.parent-checkbox').forEach(cb => cb.checked = false);
@@ -1874,9 +1607,7 @@
       } else {
         orgData.push(newNode);
         renderApp();
-        
-        // Reset custom após submissão
-        cancelEdit();
+        this.reset();
         
         showLoading(true);
         await salvarNaPlanilha({ action: "ADD", node: newNode });
@@ -1905,7 +1636,6 @@
     };
 
     document.addEventListener("DOMContentLoaded", () => {
-      initPlugins();
       carregarDados();
 
       const searchParentInput = document.getElementById('searchParent');
