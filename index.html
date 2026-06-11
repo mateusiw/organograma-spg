@@ -114,6 +114,22 @@
     .flatpickr-input[readonly] {
       background-color: #f8fafc;
     }
+
+    /* Toast de Feedback */
+    @keyframes toast-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes toast-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(16px); } }
+
+    /* Bottom sheet mobile */
+    @keyframes sheet-up { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .mobile-sheet-inner { animation: sheet-up 0.25s ease-out; }
+
+    /* Safe area para iPhone com notch */
+    #mobile-bottom-nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+    /* Espaço para a bottom nav no main content */
+    @media (max-width: 1023px) {
+      #main-content { padding-bottom: 5rem !important; }
+    }
   </style>
 </head>
 <body id="body-container" class="font-sans text-slate-800 flex flex-col h-screen overflow-hidden bg-[url('https://i.imgur.com/zaP8fZ8.jpeg')] bg-cover bg-center bg-fixed transition-colors duration-500">
@@ -128,8 +144,8 @@
   </div>
 
   <!-- Modal de Perfil Detalhado -->
-  <div id="profile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] hidden items-center justify-center p-4">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col transform transition-all">
+  <div id="profile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] hidden items-end sm:items-center justify-center sm:p-4">
+    <div class="mobile-sheet-inner bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-lg w-full max-h-[92vh] overflow-hidden flex flex-col transition-all">
       <div class="relative h-24 bg-gradient-to-r from-emerald-500 to-teal-600 flex-shrink-0">
         <button onclick="fecharPerfilModal()" class="absolute top-4 right-4 text-white/80 hover:text-white bg-black/10 hover:bg-black/20 p-1.5 rounded-full transition-colors" title="Fechar Perfil">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -141,6 +157,7 @@
             <h2 id="perf-nome" class="text-xl font-bold text-slate-800">A carregar...</h2>
             <p id="perf-cargo" class="text-sm font-semibold text-emerald-600 uppercase tracking-wider mt-1">-</p>
             <p id="perf-sub" class="text-sm text-slate-500 mt-1 leading-relaxed">-</p>
+            <p id="perf-empresa" class="hidden text-xs font-medium text-slate-400 mt-2 tracking-wide"></p>
           </div>
           <div id="perf-sexo" class="bg-slate-100 text-slate-500 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest hidden"></div>
         </div>
@@ -156,13 +173,29 @@
             <p id="perf-idade" class="text-sm font-semibold text-slate-700 leading-tight">-</p>
             <p id="perf-data-nascimento" class="text-[10px] text-slate-500 mt-1 font-medium">-</p>
           </div>
+          <div id="perf-local-wrap" class="hidden bg-slate-50 p-3 rounded-xl border border-slate-100 col-span-2 flex items-center gap-3">
+            <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <div>
+              <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Local Físico</p>
+              <p id="perf-local" class="text-sm font-semibold text-slate-700 leading-tight">-</p>
+            </div>
+          </div>
           <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 col-span-2 mt-2">
             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">Funções Detalhadas</p>
             <p id="perf-funcoes" class="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">-</p>
           </div>
         </div>
 
-        <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+        <div class="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2">
+          <button id="btn-editar-perfil" onclick="editarPerfilModal()" class="hidden px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center gap-2 shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+            Editar
+          </button>
+          <button id="btn-remover-perfil" onclick="removerPerfilModal()" class="hidden px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-bold rounded-xl transition-colors flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            Remover
+          </button>
+          <div class="flex-1"></div>
           <button id="btn-voltar-perfil" onclick="fecharPerfilModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             Voltar
@@ -227,8 +260,8 @@
   </div>
 
   <!-- Dashboard de Métricas (Visão Geral + Aniversariantes) -->
-  <div id="dashboard-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full overflow-hidden transform transition-all flex flex-col h-[90vh]">
+  <div id="dashboard-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden items-end sm:items-center justify-center sm:p-4">
+    <div class="mobile-sheet-inner bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-5xl w-full overflow-hidden transition-all flex flex-col h-[92vh] sm:h-[90vh]">
       
       <!-- Header Dashboard -->
       <div class="p-5 border-b border-slate-100 bg-white z-10 flex-shrink-0">
@@ -237,9 +270,15 @@
             <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
             Dashboard de Produção
           </h3>
-          <button onclick="fecharDashboardModal()" class="text-slate-400 hover:text-slate-700 p-2 -mr-2 -mt-2 rounded-lg hover:bg-slate-100 transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
+          <div class="flex items-center gap-2 -mr-2 -mt-2">
+            <button onclick="imprimirDashboard()" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 border border-emerald-200" title="Imprimir lista filtrada">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+              Imprimir
+            </button>
+            <button onclick="fecharDashboardModal()" class="text-slate-400 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100 transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
         </div>
         
         <!-- Abas -->
@@ -252,61 +291,66 @@
         </div>
       </div>
 
-      <!-- Container Base para KPIs e Filtros (Oculto na Aba de Aniversários) -->
-      <div id="dash-kpis-filters">
-        <!-- KPIs -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 bg-slate-50 border-b border-slate-200">
-          <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-center">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Equipe</span>
-            <span id="dash-kpi-total" class="text-2xl font-black text-slate-800 mt-1">0</span>
-          </div>
-          <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-center">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Idade Média</span>
-            <span id="dash-kpi-idade" class="text-2xl font-black text-slate-800 mt-1">0 <span class="text-sm font-semibold text-slate-500">anos</span></span>
-          </div>
-          <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-center">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Distribuição por Sexo</span>
-            <div class="mt-1 flex items-end gap-3">
-               <div class="flex flex-col"><span id="dash-kpi-masc" class="text-lg font-black text-blue-600">0%</span><span class="text-[9px] font-bold text-slate-400 uppercase">Masc</span></div>
-               <div class="flex flex-col"><span id="dash-kpi-fem" class="text-lg font-black text-rose-500">0%</span><span class="text-[9px] font-bold text-slate-400 uppercase">Fem</span></div>
+      <!-- Área principal scrollável (KPIs + Filtros + Lista rolam juntos no mobile) -->
+      <div class="flex-1 overflow-y-auto">
+
+        <!-- Container Base para KPIs e Filtros (Oculto na Aba de Aniversários) -->
+        <div id="dash-kpis-filters">
+          <!-- KPIs compactos no mobile: linha única com 3 valores -->
+          <div class="grid grid-cols-3 sm:grid-cols-3 gap-2 sm:gap-4 p-3 sm:p-5 bg-slate-50 border-b border-slate-200">
+            <div class="bg-white p-2 sm:p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-center">
+              <span class="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total</span>
+              <span id="dash-kpi-total" class="text-xl sm:text-2xl font-black text-slate-800 mt-0.5 sm:mt-1">0</span>
+            </div>
+            <div class="bg-white p-2 sm:p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-center">
+              <span class="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Idade Média</span>
+              <span id="dash-kpi-idade" class="text-xl sm:text-2xl font-black text-slate-800 mt-0.5 sm:mt-1">0 <span class="text-xs sm:text-sm font-semibold text-slate-500">anos</span></span>
+            </div>
+            <div class="bg-white p-2 sm:p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-center">
+              <span class="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Sexo</span>
+              <div class="mt-0.5 sm:mt-1 flex items-end gap-2">
+                <div class="flex flex-col"><span id="dash-kpi-masc" class="text-base sm:text-lg font-black text-blue-600">0%</span><span class="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase">M</span></div>
+                <div class="flex flex-col"><span id="dash-kpi-fem" class="text-base sm:text-lg font-black text-rose-500">0%</span><span class="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase">F</span></div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Filtros Dinâmicos -->
-        <div class="p-5 bg-white border-b border-slate-100 grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <div class="relative">
-            <input type="text" id="filter-nome" placeholder="Buscar pessoa..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" oninput="updateDashboard()">
-            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <!-- Filtros Dinâmicos -->
+          <div class="p-3 sm:p-5 bg-white border-b border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            <div class="relative col-span-2 sm:col-span-1">
+              <input type="text" id="filter-nome" placeholder="Buscar pessoa..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" oninput="updateDashboard()">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <select id="filter-empresa" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onchange="updateDashboard()">
+              <option value="">Todas as Empresas</option>
+            </select>
+            <select id="filter-setor" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onchange="updateDashboard()">
+              <option value="">Todos os Setores</option>
+            </select>
+            <select id="filter-lider" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onchange="updateDashboard()">
+              <option value="">Todos os Líderes</option>
+            </select>
           </div>
-          <select id="filter-empresa" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onchange="updateDashboard()">
-            <option value="">Todas as Empresas</option>
-          </select>
-          <select id="filter-setor" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onchange="updateDashboard()">
-            <option value="">Todos os Setores</option>
-          </select>
-          <select id="filter-lider" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onchange="updateDashboard()">
-            <option value="">Todos os Líderes</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Área Flexível (Listagens e Tabelas Analíticas) -->
-      <div class="flex-1 overflow-y-auto p-5 bg-slate-50/50 flex flex-col gap-6" id="dash-scroll-area">
-        
-        <!-- Nova Seção de Análise (Cargos e Tempo de Empresa) -->
-        <div id="dash-analise-container" class="grid grid-cols-1 lg:grid-cols-2 gap-4 hidden">
-           <!-- Renderizado dinamicamente pelo JS -->
         </div>
 
-        <div id="dash-lista-pessoas-wrapper" class="hidden">
-           <h4 id="dash-titulo-lista" class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 px-1 border-b border-slate-200 pb-2">Lista de Colaboradores</h4>
+        <!-- Listagens e Tabelas Analíticas -->
+        <div class="p-3 sm:p-5 bg-slate-50/50 flex flex-col gap-4 sm:gap-6" id="dash-scroll-area">
+
+          <!-- Nova Seção de Análise (Cargos e Tempo de Empresa) -->
+          <div id="dash-analise-container" class="grid grid-cols-1 lg:grid-cols-2 gap-4 hidden">
+             <!-- Renderizado dinamicamente pelo JS -->
+          </div>
+
+          <div id="dash-lista-pessoas-wrapper" class="hidden">
+             <h4 id="dash-titulo-lista" class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 px-1 border-b border-slate-200 pb-2">Lista de Colaboradores</h4>
+          </div>
+
+          <!-- Grid de Cards de Pessoas -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="dash-lista-pessoas">
+            <!-- Renderizado dinamicamente pelo JS -->
+          </div>
         </div>
-        
-        <!-- Grid de Cards de Pessoas -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="dash-lista-pessoas">
-          <!-- Renderizado dinamicamente pelo JS -->
-        </div>
+
       </div>
     </div>
   </div>
@@ -315,10 +359,10 @@
   <header id="main-header" class="flex-none w-full bg-white shadow-sm border-b border-slate-200 z-50 flex items-center justify-between px-4 sm:px-6 py-3">
     <div class="flex items-center gap-3">
       <img src="https://i.imgur.com/nwWZpfC.png" alt="Logo SPG" class="h-8 w-auto object-contain" onerror="this.src='https://placehold.co/100x40?text=Logo+SPG'">
-      <h1 class="text-lg font-bold text-slate-800 hidden sm:block">Organograma - SPG</h1>
+      <h1 class="text-base font-bold text-slate-800"><span class="hidden sm:inline">Organograma - </span>SPG</h1>
     </div>
     
-    <div class="flex items-center gap-2 sm:gap-4 flex-wrap justify-end flex-1 ml-4">
+    <div class="flex items-center gap-2 sm:gap-3 justify-end flex-1 ml-2 sm:ml-4">
       
       <!-- Busca Global (Destaca no Organograma) -->
       <div class="relative hidden lg:block max-w-xs w-full">
@@ -328,21 +372,32 @@
         <input type="text" id="global-search" placeholder="Localizar no mapa..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" onkeypress="if(event.key === 'Enter') buscarColaborador(this.value)">
       </div>
 
-      <!-- Botão Modo Compacto -->
-      <button onclick="toggleCompactMode()" id="btn-compact" class="bg-white p-2 flex items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Alternar Modo Compacto">
-        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+      <!-- Botão Busca Mobile (oculto — coberto pela bottom nav) -->
+      <button onclick="toggleMobileSearch()" id="btn-mobile-search" class="hidden bg-white p-2 flex items-center rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Pesquisar">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
       </button>
 
-      <!-- Botão Dashboard -->
-      <button onclick="abrirDashboardModal()" class="bg-slate-50 p-2 px-3 flex items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Abrir Dashboard de Produção">
-        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-        <span class="text-xs uppercase tracking-wider font-bold hidden md:block">Dashboard</span>
+      <!-- Botão Imprimir Organograma (só desktop) -->
+      <button onclick="abrirPrintOrgModal()" class="hidden lg:flex bg-white p-2 px-3 items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Imprimir Organograma em mapa">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+        <span class="text-xs uppercase tracking-wider font-bold">Mapa</span>
       </button>
 
-      <!-- Botão de Acesso (Login/Painel) -->
-      <button id="btn-acesso" onclick="handleLoginClick()" class="bg-white p-2 px-3 flex items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-700 hover:text-emerald-600 hover:bg-emerald-50 transition font-bold" title="Acesso Administrativo">
-        <svg id="icone-acesso" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-        <span id="texto-acesso" class="text-xs uppercase tracking-wider hidden sm:block">Login</span>
+      <!-- Botão Modo Compacto (só desktop) -->
+      <button onclick="toggleCompactMode()" id="btn-compact" class="hidden lg:flex bg-white p-2 items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Alternar Modo Compacto">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+      </button>
+
+      <!-- Botão Dashboard (só desktop) -->
+      <button onclick="abrirDashboardModal()" class="hidden lg:flex bg-slate-50 p-2 px-3 items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Abrir Dashboard de Produção">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <span class="text-xs uppercase tracking-wider font-bold">Dashboard</span>
+      </button>
+
+      <!-- Botão de Acesso (Login/Painel) - só desktop -->
+      <button id="btn-acesso" onclick="handleLoginClick()" class="hidden lg:flex bg-white p-2 px-3 items-center gap-2 rounded-lg shadow-sm border border-slate-200 text-slate-700 hover:text-emerald-600 hover:bg-emerald-50 transition font-bold" title="Acesso Administrativo">
+        <svg id="icone-acesso" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        <span id="texto-acesso" class="text-xs uppercase tracking-wider">Login</span>
       </button>
 
       <!-- Controles de Zoom -->
@@ -358,11 +413,27 @@
     </div>
   </header>
 
+  <!-- Barra de Busca Mobile -->
+  <div id="mobile-search-bar" class="hidden w-full bg-white border-b border-slate-200 px-4 py-2 flex-none z-40 shadow-sm">
+    <div class="relative">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+      </div>
+      <input type="text" id="mobile-search-input" placeholder="Localizar no mapa..." class="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+      <button onclick="buscarColaborador(document.getElementById('mobile-search-input').value); toggleMobileSearch();" class="absolute inset-y-0 right-0 pr-3 flex items-center text-emerald-600 hover:text-emerald-700">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      </button>
+    </div>
+  </div>
+
   <!-- WRAPPER PARA O CORPO -->
   <div class="flex flex-1 overflow-hidden w-full relative">
 
     <aside id="sidebar" class="w-full sm:w-96 fixed sm:relative bg-slate-50 border-r border-slate-200 flex-col h-full shadow-lg z-40 flex-shrink-0 transition-all duration-300 hidden">
       <div class="p-6 bg-white border-b border-slate-100 relative shadow-sm z-10">
+        <button onclick="fazerLogout()" id="btn-logout" class="hidden absolute top-4 right-12 text-slate-400 hover:text-red-500 transition-colors" title="Terminar sessão">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+        </button>
         <button onclick="toggleSidebar()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
@@ -503,6 +574,10 @@
                 <!-- Alterado tipo para text para permitir o input rápido junto do calendário -->
                 <input type="text" id="contratacao" placeholder="dd/mm/aaaa" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
               </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Local Físico</label>
+                <input type="text" id="localFisico" placeholder="Ex: Sede, Oásis, Campo..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+              </div>
             </div>
 
             <!-- BLOCO 3: Funções -->
@@ -540,19 +615,58 @@
 
   </div>
 
+  <!-- Modal: Imprimir Organograma (Mapa) -->
+  <div id="print-org-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden items-end sm:items-center justify-center sm:p-4">
+    <div class="mobile-sheet-inner bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+      <div class="p-5 border-b border-slate-100">
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+          Imprimir Organograma
+        </h3>
+        <p class="text-xs text-slate-500 mt-1">Gera o mapa hierárquico com as linhas de conexão, pronto para imprimir em A3 paisagem.</p>
+      </div>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Filtrar por Empresa</label>
+          <select id="print-org-empresa" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition text-slate-700">
+            <option value="">Todas as Empresas</option>
+          </select>
+        </div>
+        <p class="text-[10px] text-slate-400 leading-relaxed">Se nenhuma empresa for selecionada, o organograma completo será gerado.</p>
+      </div>
+      <div class="bg-slate-50 px-5 py-4 flex justify-end gap-3 border-t border-slate-100">
+        <button onclick="fecharPrintOrgModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors">Cancelar</button>
+        <button onclick="confirmarImpressaoOrg()" class="px-5 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+          Gerar Mapa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast de Feedback -->
+  <div id="toast" class="fixed bottom-6 right-6 z-[150] pointer-events-none hidden">
+    <div id="toast-inner" class="flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold text-white min-w-[220px] max-w-sm bg-emerald-600">
+      <svg id="toast-icon" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+      <span id="toast-msg"></span>
+    </div>
+  </div>
+
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEEVCbWlLFJg_ATwZvzvFQQxE0qAiOEZILNfiD2JHtsXmzseX1vCkfyVCcj737exA5/exec"; 
     
     let isLogged = false;
-    let savedPassword = ""; 
-    
+    let savedPassword = "";
+    let toastTimeout = null;
+
     let orgData = [];
     let currentZoom = 1.0;
-    let collapsedNodes = new Set(); 
+    let collapsedNodes = new Set();
     let isCompactMode = false;
     let currentDashboardTab = 'geral';
     let countdownInterval = null;
     let openedFromDashboard = false;
+    let currentProfileNodeId = null;
 
     // Variáveis Globais de Instância (Bibliotecas)
     let tsNome, tsCargo, tsEmpresa, tsTema, tsSexo;
@@ -604,6 +718,53 @@
       // Menus fechados normais, sem digitar
       tsTema = new TomSelect("#tema", { controlInput: null });
       tsSexo = new TomSelect("#sexo", { controlInput: null });
+    }
+
+    function showToast(message, type = 'success') {
+      clearTimeout(toastTimeout);
+      const toast = document.getElementById('toast');
+      const toastInner = document.getElementById('toast-inner');
+      const toastMsg = document.getElementById('toast-msg');
+      const toastIcon = document.getElementById('toast-icon');
+      toastMsg.textContent = message;
+      const base = 'flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold text-white min-w-[220px] max-w-sm';
+      if (type === 'success') {
+        toastInner.className = base + ' bg-emerald-600';
+        toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+      } else if (type === 'error') {
+        toastInner.className = base + ' bg-red-500';
+        toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
+      } else {
+        toastInner.className = base + ' bg-slate-700';
+        toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+      }
+      toast.classList.remove('hidden');
+      toastInner.style.animation = 'toast-in 0.25s ease forwards';
+      toastTimeout = setTimeout(() => {
+        toastInner.style.animation = 'toast-out 0.25s ease forwards';
+        setTimeout(() => toast.classList.add('hidden'), 250);
+      }, 3500);
+    }
+
+    function isAniversarioHoje(nascimentoStr) {
+      if (!nascimentoStr) return false;
+      const nasc = parseLocalDate(nascimentoStr);
+      if (!nasc || isNaN(nasc.getTime())) return false;
+      const hoje = new Date();
+      return nasc.getMonth() === hoje.getMonth() && nasc.getDate() === hoje.getDate();
+    }
+
+    function toggleMobileSearch() {
+      const bar = document.getElementById('mobile-search-bar');
+      const btn = document.getElementById('btn-mobile-search');
+      if (bar.classList.contains('hidden')) {
+        bar.classList.remove('hidden');
+        btn.classList.add('text-emerald-600', 'bg-emerald-50', 'border-emerald-200');
+        document.getElementById('mobile-search-input').focus();
+      } else {
+        bar.classList.add('hidden');
+        btn.classList.remove('text-emerald-600', 'bg-emerald-50', 'border-emerald-200');
+      }
     }
 
     function showLoading(show, message = "A processar...") {
@@ -743,6 +904,7 @@
       const node = orgData.find(n => n.id === id);
       if (!node) return;
 
+      currentProfileNodeId = id;
       openedFromDashboard = fromDashboard;
       if (fromDashboard) {
         document.getElementById('dashboard-modal').classList.add('hidden');
@@ -782,10 +944,99 @@
           '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> Fechar';
       }
 
+      // Empresa
+      const elEmpresa = document.getElementById('perf-empresa');
+      if (elEmpresa) {
+        if (node.empresa && node.empresa.trim()) {
+          elEmpresa.textContent = node.empresa.split(/[,;]/).map(e => e.trim()).filter(Boolean).join(' · ');
+          elEmpresa.classList.remove('hidden');
+        } else {
+          elEmpresa.classList.add('hidden');
+        }
+      }
+
+      // Local Físico
+      const elLocalWrap = document.getElementById('perf-local-wrap');
+      const elLocal = document.getElementById('perf-local');
+      if (elLocalWrap && elLocal) {
+        if (node.localFisico && node.localFisico.trim()) {
+          elLocal.textContent = node.localFisico;
+          elLocalWrap.classList.remove('hidden');
+        } else {
+          elLocalWrap.classList.add('hidden');
+        }
+      }
+
+      // Botões admin
+      const btnEditar = document.getElementById('btn-editar-perfil');
+      const btnRemover = document.getElementById('btn-remover-perfil');
+      if (btnEditar) btnEditar.classList.toggle('hidden', !isLogged);
+      if (btnRemover) btnRemover.classList.toggle('hidden', !isLogged);
+
       const modal = document.getElementById('profile-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
     };
+
+    window.editarPerfilModal = function() {
+      fecharPerfilModal();
+      if (currentProfileNodeId !== null) {
+        editNode(currentProfileNodeId);
+      }
+    };
+
+    window.removerPerfilModal = async function() {
+      if (!currentProfileNodeId) return;
+      const id = currentProfileNodeId;
+      const savedFromDashboard = openedFromDashboard;
+
+      const confirmed = await customConfirm('Tem a certeza de que deseja remover esta pessoa e todos os seus subordinados diretos?');
+      if (!confirmed) return;
+
+      // Fechar modal sem reabrir dashboard ainda
+      const modal = document.getElementById('profile-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      currentProfileNodeId = null;
+      openedFromDashboard = false;
+
+      const idsToRemove = [id];
+      const findChildren = (parentId) => {
+        orgData.filter(n => getPrimaryParent(n) === parentId).forEach(c => {
+          idsToRemove.push(c.id);
+          findChildren(c.id);
+        });
+      };
+      findChildren(id);
+      orgData = orgData.filter(n => !idsToRemove.includes(n.id));
+      renderApp();
+
+      if (savedFromDashboard) abrirDashboardModal();
+
+      showToast('Pessoa removida com sucesso.');
+      showLoading(true);
+      await salvarNaPlanilha({ action: "DELETE", ids: idsToRemove });
+      showLoading(false);
+    };
+
+    function fazerLogout() {
+      isLogged = false;
+      savedPassword = '';
+      sessionStorage.removeItem('spg_session');
+      document.getElementById('texto-acesso').textContent = "Login";
+      document.getElementById('icone-acesso').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>';
+      document.getElementById('btn-logout').classList.add('hidden');
+      document.getElementById('icone-mob-acesso').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>';
+      document.getElementById('texto-mob-acesso').textContent = 'Login';
+      const sidebar = document.getElementById('sidebar');
+      if (!sidebar.classList.contains('hidden')) {
+        cancelEdit();
+        sidebar.classList.add('hidden');
+        sidebar.classList.remove('flex');
+      }
+      renderApp();
+      showToast('Sessão encerrada.', 'info');
+    }
 
     window.fecharPerfilModal = function() {
       const modal = document.getElementById('profile-modal');
@@ -897,11 +1148,15 @@
         if (result.success) {
           isLogged = true;
           savedPassword = senhaDigitada;
+          try { sessionStorage.setItem('spg_session', btoa(senhaDigitada)); } catch(e) {}
           fecharLoginModal();
           
           document.getElementById('texto-acesso').textContent = "Painel de Cargos";
           document.getElementById('icone-acesso').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>';
           
+          document.getElementById('btn-logout').classList.remove('hidden');
+          document.getElementById('icone-mob-acesso').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>';
+          document.getElementById('texto-mob-acesso').textContent = 'Gerir';
           toggleSidebar();
           renderApp();
         } else {
@@ -933,6 +1188,16 @@
 
     function toggleSidebar() {
       const sidebar = document.getElementById('sidebar');
+      if (!sidebar.classList.contains('hidden') && editingNodeId !== null) {
+        customConfirm('Tem alterações não guardadas. Deseja fechar o painel?', 'Fechar Painel').then(confirmed => {
+          if (confirmed) {
+            cancelEdit();
+            sidebar.classList.add('hidden');
+            sidebar.classList.remove('flex');
+          }
+        });
+        return;
+      }
       if (sidebar.classList.contains('hidden')) {
         sidebar.classList.remove('hidden');
         sidebar.classList.add('flex');
@@ -1069,6 +1334,293 @@
       document.getElementById('dashboard-modal').classList.add('hidden');
       document.getElementById('dashboard-modal').classList.remove('flex');
       clearCountdown();
+    };
+
+    window.imprimirDashboard = function() {
+      const term     = document.getElementById('filter-nome').value.toLowerCase().trim();
+      const empFilter = document.getElementById('filter-empresa').value;
+      const setFilter = document.getElementById('filter-setor').value;
+      const lidFilter = document.getElementById('filter-lider').value;
+
+      const filteredData = orgData.filter(node => {
+        if (term && !node.name.toLowerCase().includes(term)) return false;
+        if (empFilter) {
+          if (!node.empresa) return false;
+          if (!node.empresa.split(/[,;]/).map(e => e.trim()).includes(empFilter)) return false;
+        }
+        if (setFilter && node.title.trim() !== setFilter) return false;
+        if (lidFilter && String(getPrimaryParent(node)) !== lidFilter) return false;
+        return true;
+      }).sort((a, b) => a.name.localeCompare(b.name));
+
+      if (filteredData.length === 0) {
+        customAlert('Nenhuma pessoa encontrada com os filtros atuais.', 'Sem dados para imprimir');
+        return;
+      }
+
+      // Título do relatório com base nos filtros ativos
+      let tituloFiltro = 'Todos os Colaboradores';
+      const partesFiltro = [];
+      if (empFilter) partesFiltro.push(empFilter);
+      if (setFilter) partesFiltro.push(setFilter);
+      if (term) partesFiltro.push(`"${term}"`);
+      if (lidFilter) {
+        const liderNode = orgData.find(n => String(n.id) === lidFilter);
+        if (liderNode) partesFiltro.push(`Equipa de ${liderNode.name}`);
+      }
+      if (partesFiltro.length > 0) tituloFiltro = partesFiltro.join(' · ');
+
+      const dataAtual = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      let rows = '';
+      filteredData.forEach((p, idx) => {
+        const subOuLocal = p.localFisico || p.sub || '-';
+        const tempEmp = calcularTempoEmpresa(p.contratacao);
+        const dataContr = formatarDataBR(p.contratacao) || '-';
+        const idadeStr = calcularIdade(p.nascimento) !== 'Não informada' ? calcularIdade(p.nascimento) : '-';
+        rows += `<tr>
+          <td class="num">${idx + 1}</td>
+          <td><strong>${p.name}</strong></td>
+          <td>${p.title}</td>
+          <td>${subOuLocal}</td>
+          <td>${tempEmp}</td>
+          <td>${dataContr}</td>
+          <td>${idadeStr}</td>
+        </tr>`;
+      });
+
+      const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório — ${tituloFiltro}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #1e293b; padding: 15mm 12mm; }
+    .header { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 3px solid #10b981; display: flex; justify-content: space-between; align-items: flex-end; }
+    .header h1 { font-size: 17px; color: #111; }
+    .header p { font-size: 10px; color: #64748b; margin-top: 3px; }
+    .header .logo { font-size: 10px; color: #94a3b8; text-align: right; }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    thead th { background: #f0fdf4; color: #065f46; padding: 7px 9px; text-align: left; border: 1px solid #d1fae5; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+    tbody td { padding: 6px 9px; border: 1px solid #e2e8f0; vertical-align: middle; }
+    tbody tr:nth-child(even) td { background: #f8fafc; }
+    .num { color: #94a3b8; text-align: center; width: 28px; font-size: 10px; }
+    .footer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; display: flex; justify-content: space-between; }
+    @media print {
+      body { padding: 10mm 8mm; }
+      @page { margin: 10mm; size: A4 landscape; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Relatório de Colaboradores — ${tituloFiltro}</h1>
+      <p>Sítio Pedra Grande &nbsp;·&nbsp; Gerado em ${dataAtual} &nbsp;·&nbsp; Total: <strong>${filteredData.length}</strong> pessoa${filteredData.length !== 1 ? 's' : ''}</p>
+    </div>
+    <div class="logo">Organograma SPG</div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th class="num">#</th>
+        <th>Nome</th>
+        <th>Função / Cargo</th>
+        <th>Subtítulo / Local</th>
+        <th>Tempo de Empresa</th>
+        <th>Contratação</th>
+        <th>Idade</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="footer">
+    <span>Organograma SPG — gerado automaticamente pelo sistema</span>
+    <span>${dataAtual}</span>
+  </div>
+  <script>window.onload = function() { window.print(); }<\/script>
+</body>
+</html>`;
+
+      const printWin = window.open('', '_blank', 'width=1000,height=720');
+      if (!printWin) {
+        customAlert('O navegador bloqueou a janela de impressão. Permita pop-ups para este site.', 'Pop-up bloqueado');
+        return;
+      }
+      printWin.document.write(html);
+      printWin.document.close();
+    };
+
+    window.abrirPrintOrgModal = function() {
+      const sel = document.getElementById('print-org-empresa');
+      const empresasSet = new Set();
+      orgData.forEach(n => {
+        if (n.empresa) n.empresa.split(/[,;]/).forEach(e => { const v = e.trim(); if (v) empresasSet.add(v); });
+      });
+      sel.innerHTML = '<option value="">Todas as Empresas</option>' +
+        [...empresasSet].sort().map(e => `<option value="${e}">${e}</option>`).join('');
+      const modal = document.getElementById('print-org-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    window.fecharPrintOrgModal = function() {
+      const modal = document.getElementById('print-org-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    window.confirmarImpressaoOrg = function() {
+      const empresa = document.getElementById('print-org-empresa').value;
+      fecharPrintOrgModal();
+      imprimirOrganograma(empresa);
+    };
+
+    window.imprimirOrganograma = function(empresaFiltro) {
+      const themeHex = {
+        green:'#10b981', blue:'#0ea5e9', orange:'#f59e0b', purple:'#a855f7',
+        teal:'#14b8a6', rose:'#0f172a', indigo:'#6366f1', red:'#ef4444',
+        yellow:'#eab308', slate:'#64748b', cyan:'#06b6d4', violet:'#8b5cf6'
+      };
+
+      // Determinar nós principais e nós de contexto (ancestrais)
+      let mainIds = new Set(), contextIds = new Set();
+      if (empresaFiltro) {
+        orgData.forEach(n => {
+          if (n.empresa && n.empresa.split(/[,;]/).map(e => e.trim()).includes(empresaFiltro)) mainIds.add(n.id);
+        });
+        const addAncestors = (id) => {
+          const node = orgData.find(n => n.id === id);
+          if (!node || !node.parent) return;
+          String(node.parent).split(/[,;]/).forEach(p => {
+            const pid = parseInt(p.trim());
+            if (!isNaN(pid) && !mainIds.has(pid) && !contextIds.has(pid)) {
+              contextIds.add(pid);
+              addAncestors(pid);
+            }
+          });
+        };
+        [...mainIds].forEach(id => addAncestors(id));
+        if (mainIds.size === 0) { customAlert('Nenhuma pessoa encontrada para esta empresa.', 'Sem dados'); return; }
+      }
+
+      const data = (mainIds.size > 0)
+        ? orgData.filter(n => mainIds.has(n.id) || contextIds.has(n.id))
+        : orgData;
+
+      function getPP(node) {
+        if (!node.parent) return null;
+        const p = parseInt(String(node.parent).split(/[,;]/)[0]);
+        return isNaN(p) ? null : p;
+      }
+
+      function buildGroups(nodes) {
+        const groups = [], done = new Set();
+        nodes.forEach(n => {
+          if (done.has(n.id)) return;
+          if (n.grouped) {
+            const sibs = nodes.filter(c => c.grouped && c.title === n.title);
+            groups.push(sibs); sibs.forEach(s => done.add(s.id));
+          } else { groups.push([n]); done.add(n.id); }
+        });
+        return groups;
+      }
+
+      function cardHtml(node) {
+        const color = themeHex[node.theme] || '#6366f1';
+        const isCtx = mainIds.size > 0 && contextIds.has(node.id);
+        const boxStyle = isCtx
+          ? `border:1.5px dashed #cbd5e1;background:#f8fafc;opacity:0.55;`
+          : `border:1.5px solid ${color};background:white;`;
+        return `<div style="display:inline-flex;flex-direction:column;align-items:center;width:120px;padding:8px 6px;border-radius:9px;margin:0 3px;${boxStyle}">
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;padding:1px 7px;border-radius:999px;background:${color}18;color:${color};border:1px solid ${color}35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:96%;margin-bottom:4px;">${node.title}</div>
+          <div style="font-size:11px;font-weight:700;color:#0f172a;line-height:1.25;text-align:center;">${node.name}</div>
+          ${node.sub ? `<div style="font-size:8px;color:#64748b;margin-top:1px;text-align:center;line-height:1.2;">${node.sub}</div>` : ''}
+          ${node.localFisico ? `<div style="font-size:8px;color:#94a3b8;margin-top:2px;">📍 ${node.localFisico}</div>` : ''}
+        </div>`;
+      }
+
+      function renderGroup(grp) {
+        const children = data.filter(n => grp.some(g => getPP(n) === g.id));
+        const multi = grp.length > 1;
+        const cards = grp.map(n => cardHtml(n)).join('');
+        const groupHtml = multi
+          ? `<div style="display:flex;gap:4px;justify-content:center;">${cards}</div>`
+          : cards;
+        const childrenHtml = children.length > 0
+          ? `<ul>${buildGroups(children).map(g => renderGroup(g)).join('')}</ul>`
+          : '';
+        return `<li>${groupHtml}${childrenHtml}</li>`;
+      }
+
+      const roots = data.filter(n => { const p = getPP(n); return p === null || !data.some(d => d.id === p); });
+      const treeHtml = roots.length > 0
+        ? `<div class="tree mt-4"><ul>${buildGroups(roots).map(g => renderGroup(g)).join('')}</ul></div>`
+        : '<p style="text-align:center;color:#94a3b8;padding:40px;">Sem dados para exibir.</p>';
+
+      const titulo = empresaFiltro || 'Todos os Colaboradores';
+      const dataAtual = new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+      const totalMain = mainIds.size > 0 ? mainIds.size : data.length;
+
+      const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Organograma — ${titulo}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:Arial,sans-serif;background:white;}
+    .toolbar{position:fixed;top:0;left:0;right:0;background:#1e293b;color:white;padding:10px 16px;display:flex;align-items:center;gap:12px;z-index:100;font-size:13px;}
+    .toolbar h2{font-size:14px;font-weight:700;flex:1;}
+    .btn{padding:6px 14px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;}
+    .btn-p{background:#10b981;color:white;} .btn-c{background:#475569;color:white;}
+    .area{padding-top:54px;}
+    .ph{text-align:center;padding:18px 20px 10px;border-bottom:2.5px solid #10b981;margin-bottom:16px;}
+    .ph h1{font-size:20px;color:#0f172a;font-weight:800;} .ph p{font-size:11px;color:#64748b;margin-top:3px;}
+    .legend{display:flex;align-items:center;gap:16px;justify-content:center;font-size:10px;color:#64748b;padding:6px 0 12px;flex-wrap:wrap;}
+    .leg-item{display:flex;align-items:center;gap:5px;}
+    .tw{overflow:auto;padding:10px 30px 40px;}
+    .tree{display:flex;justify-content:center;}
+    .tree ul{padding-top:22px;position:relative;display:flex;justify-content:center;}
+    .tree li{float:left;text-align:center;list-style-type:none;position:relative;padding:22px 8px 0 8px;}
+    .tree li::before,.tree li::after{content:'';position:absolute;top:0;right:50%;border-top:1.5px solid #475569;width:50%;height:22px;}
+    .tree li::after{right:auto;left:50%;border-left:1.5px solid #475569;}
+    .tree li:only-child::after,.tree li:only-child::before{display:none;}
+    .tree li:only-child{padding-top:0;}
+    .tree li:first-child::before,.tree li:last-child::after{border:0 none;}
+    .tree li:last-child::before{border-right:1.5px solid #475569;border-radius:0 5px 0 0;}
+    .tree li:first-child::after{border-radius:5px 0 0 0;}
+    .tree ul::before{content:'';position:absolute;top:0;left:50%;border-left:1.5px solid #475569;width:0;height:22px;margin-left:-1px;}
+    @media print{
+      .toolbar{display:none!important;} .area{padding-top:0;}
+      @page{size:A3 landscape;margin:8mm;}
+      body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <h2>Organograma SPG — ${titulo}</h2>
+    <span style="color:#94a3b8;font-size:11px;">${totalMain} colaborador${totalMain!==1?'es':''}</span>
+    <button class="btn btn-p" onclick="window.print()">🖨️ Imprimir (A3)</button>
+    <button class="btn btn-c" onclick="window.close()">✕ Fechar</button>
+  </div>
+  <div class="area">
+    <div class="ph">
+      <h1>Organograma — ${titulo}</h1>
+      <p>Sítio Pedra Grande &nbsp;·&nbsp; ${dataAtual} &nbsp;·&nbsp; ${totalMain} colaborador${totalMain!==1?'es':''}</p>
+    </div>
+    ${contextIds.size > 0 ? `<div class="legend"><div class="leg-item"><div style="width:18px;height:14px;border:1.5px solid #10b981;border-radius:4px;background:white;"></div> Empresa selecionada</div><div class="leg-item"><div style="width:18px;height:14px;border:1.5px dashed #cbd5e1;border-radius:4px;background:#f8fafc;opacity:0.7;"></div> Hierarquia de contexto</div></div>` : ''}
+    <div class="tw">${treeHtml}</div>
+  </div>
+</body>
+</html>`;
+
+      const w = window.open('', '_blank', 'width=1400,height=900');
+      if (!w) { customAlert('Pop-up bloqueado. Permita pop-ups para este site e tente novamente.', 'Pop-up Bloqueado'); return; }
+      w.document.write(html);
+      w.document.close();
     };
 
     window.switchDashboardTab = function(tab) {
@@ -1353,25 +1905,18 @@
         let htmlCargos = `
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col h-64">
             <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg> Distribuição por Cargo</h4>
-            <div class="overflow-y-auto flex-1 pr-2 checkbox-list-scroll">
-              <table class="w-full text-left text-xs">
-                <thead class="sticky top-0 bg-white shadow-sm z-10">
-                  <tr class="text-slate-400 border-b border-slate-100">
-                    <th class="pb-2 font-bold uppercase">Cargo / Função</th>
-                    <th class="pb-2 font-bold uppercase text-center w-16">Qtd</th>
-                    <th class="pb-2 font-bold uppercase text-right w-16">%</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50">
-                  ${cargosArray.map(c => `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                      <td class="py-2.5 font-semibold text-slate-700 truncate max-w-[150px]" title="${c.cargo}">${c.cargo}</td>
-                      <td class="py-2.5 text-center text-slate-600">${c.count}</td>
-                      <td class="py-2.5 text-right font-bold text-emerald-600">${c.pct}%</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
+            <div class="overflow-y-auto flex-1 pr-1 checkbox-list-scroll space-y-2.5 pt-1">
+              ${cargosArray.map(c => `
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="text-xs font-semibold text-slate-700 truncate max-w-[160px]" title="${c.cargo}">${c.cargo}</span>
+                    <span class="text-xs font-bold text-emerald-600 ml-2 flex-shrink-0">${c.count} · ${c.pct}%</span>
+                  </div>
+                  <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-emerald-500 rounded-full" style="width: ${c.pct}%"></div>
+                  </div>
+                </div>
+              `).join('')}
             </div>
           </div>
         `;
@@ -1479,6 +2024,7 @@
         }
         
         renderApp();
+        if (window.innerWidth < 1024) { currentZoom = 0.55; applyZoom(); }
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
         if (error.message === "Failed to fetch") {
@@ -1488,6 +2034,7 @@
         }
         orgData = [];
         renderApp();
+        if (window.innerWidth < 1024) { currentZoom = 0.55; applyZoom(); }
       }
       showLoading(false);
     }
@@ -1535,7 +2082,8 @@
     function createNodeCard(node) {
       const theme = themes[node.theme] || themes.blue;
       const isCompact = isCompactMode;
-      
+      const anivHoje = isAniversarioHoje(node.nascimento);
+
       const qtdEquipa = contarCascataSubordinados(node.id);
       let equipaBadgeHtml = '';
       if (!isCompact && qtdEquipa > 0) {
@@ -1570,11 +2118,16 @@
         </div>
       ` : '';
 
+      const anivBadgeHtml = anivHoje ? `
+        <div class="absolute -top-3 -left-2 bg-amber-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md border-2 border-white z-30 pointer-events-none" title="Aniversário hoje!">🎂</div>
+      ` : '';
+
       return `
-        <div id="card-${node.id}" class="relative inline-flex flex-col items-center w-full bg-white rounded-2xl shadow-sm border border-slate-100 ${isCompact ? 'p-2' : 'p-4'} z-10 hover:shadow-lg transition-all duration-300 group/card">
+        <div id="card-${node.id}" class="relative inline-flex flex-col items-center w-full bg-white rounded-2xl shadow-sm border border-slate-100 ${isCompact ? 'p-2' : 'p-4'} z-10 hover:shadow-lg transition-all duration-300 group/card ${anivHoje ? 'ring-2 ring-amber-300' : ''}">
           ${equipaBadgeHtml}
           ${empresasHtml}
           ${actionButtonsHtml}
+          ${anivBadgeHtml}
           <div class="font-semibold ${isCompact ? 'text-[8px] px-1.5' : 'text-[10px] px-2.5'} tracking-wider uppercase py-1 rounded-full ${isCompact ? 'mb-0' : 'mb-2'} min-w-[60px] text-center ${theme.bg} ${theme.text}">${node.title}</div>
           
           <div onclick="abrirPerfilModal(${node.id}, false)" class="cursor-pointer hover:bg-slate-50 w-full rounded p-1 transition-colors group/nome" title="Ver Perfil">
@@ -1788,7 +2341,8 @@
       if (tsTema) tsTema.setValue(node.theme);
       
       document.getElementById('subtitulo').value = node.sub || "";
-      
+      document.getElementById('localFisico').value = node.localFisico || "";
+
       // Flatpickr Updates
       if (fpNascimento && node.nascimento) fpNascimento.setDate(formatarDataParaInput(node.nascimento));
       if (fpContratacao && node.contratacao) fpContratacao.setDate(formatarDataParaInput(node.contratacao));
@@ -1875,7 +2429,8 @@
         
         nascimento: document.getElementById('nascimento').value,
         contratacao: document.getElementById('contratacao').value,
-        metadados: JSON.stringify(metadadosObj) 
+        localFisico: document.getElementById('localFisico').value,
+        metadados: JSON.stringify(metadadosObj)
       };
 
       if (editingNodeId) {
@@ -1883,17 +2438,17 @@
         if (index !== -1) orgData[index] = newNode;
         renderApp();
         cancelEdit();
-        
+        showToast('Alterações guardadas com sucesso!');
+
         showLoading(true);
         await salvarNaPlanilha({ action: "EDIT", node: newNode });
         showLoading(false);
       } else {
         orgData.push(newNode);
         renderApp();
-        
-        // Reset custom após submissão
         cancelEdit();
-        
+        showToast('Cargo adicionado com sucesso!');
+
         showLoading(true);
         await salvarNaPlanilha({ action: "ADD", node: newNode });
         showLoading(false);
@@ -1914,6 +2469,7 @@
 
       orgData = orgData.filter(n => !idsToRemove.includes(n.id));
       renderApp();
+      showToast('Cargo removido com sucesso.');
 
       showLoading(true);
       await salvarNaPlanilha({ action: "DELETE", ids: idsToRemove });
@@ -1922,7 +2478,34 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       initPlugins();
+
+      // Restaurar sessão da aba atual
+      try {
+        const savedSession = sessionStorage.getItem('spg_session');
+        if (savedSession) {
+          const pwd = atob(savedSession);
+          isLogged = true;
+          savedPassword = pwd;
+          document.getElementById('texto-acesso').textContent = "Painel de Cargos";
+          document.getElementById('icone-acesso').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>';
+          document.getElementById('btn-logout').classList.remove('hidden');
+          document.getElementById('icone-mob-acesso').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>';
+          document.getElementById('texto-mob-acesso').textContent = 'Gerir';
+        }
+      } catch(e) { sessionStorage.removeItem('spg_session'); }
+
       carregarDados();
+
+      // Listener busca mobile
+      const mobileSearchInput = document.getElementById('mobile-search-input');
+      if (mobileSearchInput) {
+        mobileSearchInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            buscarColaborador(mobileSearchInput.value);
+            toggleMobileSearch();
+          }
+        });
+      }
 
       const searchParentInput = document.getElementById('searchParent');
       if (searchParentInput) {
@@ -2046,5 +2629,27 @@
       }, { passive: true });
     });
   </script>
+
+  <!-- Barra de Navegação Inferior (Mobile) -->
+  <nav id="mobile-bottom-nav" class="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-slate-200 shadow-lg lg:hidden">
+    <div class="flex items-stretch h-16">
+      <button onclick="toggleMobileSearch()" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-500 hover:text-emerald-600 active:bg-emerald-50 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <span class="text-[10px] font-semibold">Buscar</span>
+      </button>
+      <button onclick="abrirDashboardModal()" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-500 hover:text-emerald-600 active:bg-emerald-50 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <span class="text-[10px] font-semibold">Dashboard</span>
+      </button>
+      <button onclick="abrirPrintOrgModal()" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-500 hover:text-emerald-600 active:bg-emerald-50 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+        <span class="text-[10px] font-semibold">Mapa</span>
+      </button>
+      <button id="btn-mob-acesso" onclick="handleLoginClick()" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-500 hover:text-emerald-600 active:bg-emerald-50 transition-colors">
+        <svg id="icone-mob-acesso" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        <span id="texto-mob-acesso" class="text-[10px] font-semibold">Login</span>
+      </button>
+    </div>
+  </nav>
 </body>
 </html>
