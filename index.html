@@ -665,6 +665,7 @@
     let isCompactMode = false;
     let currentDashboardTab = 'geral';
     let countdownInterval = null;
+    let anoCalendarioAniversarios = new Date().getFullYear();
     let openedFromDashboard = false;
     let currentProfileNodeId = null;
 
@@ -1747,42 +1748,189 @@
       countdownInterval = setInterval(updateTimer, 1000);
       updateTimer();
 
-      if (upcomingBirthdays.length > 1) {
-        const rest = upcomingBirthdays.slice(1);
-        
-        html += `<div class="col-span-full mt-2"><h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 pb-2">Próximos meses</h4></div>`;
-
-        rest.forEach(pessoa => {
-          const dRest = String(pessoa.nextBday.getDate()).padStart(2, '0');
-          const mRest = String(pessoa.nextBday.getMonth() + 1).padStart(2, '0');
-          const yRest = pessoa.nextBday.getFullYear();
-          
-          const distanceRest = pessoa.nextBday.getTime() - new Date().getTime();
-          const diffDays = Math.ceil(distanceRest / (1000 * 60 * 60 * 24));
-          let faltaText = "";
-          if (diffDays === 0) faltaText = "Hoje!";
-          else if (diffDays === 1) faltaText = "Amanhã!";
-          else faltaText = `Faltam ${diffDays} dias`;
-
-          html += `
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow flex items-center justify-between">
-              <div class="flex items-center gap-4">
-                <div class="bg-slate-50 border border-slate-100 rounded-lg p-2 text-center min-w-[70px] shadow-inner">
-                  <span class="block text-sm font-black text-slate-700">${dRest}/${mRest}</span>
-                  <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">${yRest}</span>
-                </div>
-                <div>
-                  <h4 class="font-bold text-slate-800 text-sm cursor-pointer hover:text-emerald-600" onclick="abrirPerfilModal(${pessoa.id}, true)">${pessoa.name}</h4>
-                  <p class="text-[10px] text-slate-500 mt-0.5 font-bold uppercase tracking-wider">${pessoa.ageToTurn} anos <span class="mx-1 text-slate-300">•</span> <span class="text-emerald-600">${faltaText}</span></p>
-                </div>
-              </div>
-            </div>
-          `;
-        });
-      }
+      html += `
+        <div class="col-span-full mt-2">
+          <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 pb-2 mb-4">Calendário de Aniversários</h4>
+          ${gerarCalendarioAniversariantesHTML(anoCalendarioAniversarios)}
+        </div>
+        <div id="calendario-aniv-detalhe" class="col-span-full"></div>
+      `;
 
       listContainer.innerHTML = html;
+
+      // Se algum dia já estava selecionado (ex: troca de ano), tenta mostrar novamente o próprio dia de hoje por padrão
+      const hoje = new Date();
+      if (hoje.getFullYear() === anoCalendarioAniversarios) {
+        mostrarAniversariantesDoDia(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+      }
     }
+
+    // Índice mês-dia -> lista de pessoas com aniversário naquele dia (independente do ano)
+    function construirIndiceAniversarios() {
+      const indice = {};
+      orgData.forEach(node => {
+        if (!node.nascimento) return;
+        const nasc = parseLocalDate(node.nascimento);
+        if (!nasc || isNaN(nasc.getTime())) return;
+        const chave = `${nasc.getMonth()}-${nasc.getDate()}`;
+        if (!indice[chave]) indice[chave] = [];
+        indice[chave].push(node);
+      });
+      return indice;
+    }
+
+    function getISOWeekNumber(date) {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    function isMesmoDia(d1, d2) {
+      return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+    }
+
+    function gerarCalendarioAniversariantesHTML(ano) {
+      const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const DIAS_SEMANA_PT = ['D','S','T','Q','Q','S','S'];
+      const indice = construirIndiceAniversarios();
+      const hoje = new Date();
+
+      const mesesHtml = MESES_PT.map((nomeMes, mes) => {
+        const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+        const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+        const diasMesAnterior = new Date(ano, mes, 0).getDate();
+
+        const celulas = [];
+        for (let i = primeiroDiaSemana - 1; i >= 0; i--) {
+          celulas.push({ dia: diasMesAnterior - i, atual: false });
+        }
+        for (let d = 1; d <= diasNoMes; d++) {
+          celulas.push({ dia: d, atual: true, data: new Date(ano, mes, d) });
+        }
+        let proximoDia = 1;
+        while (celulas.length % 7 !== 0) {
+          celulas.push({ dia: proximoDia++, atual: false });
+        }
+
+        const linhas = [];
+        for (let i = 0; i < celulas.length; i += 7) linhas.push(celulas.slice(i, i + 7));
+
+        const linhasHtml = linhas.map(linha => {
+          const dataReferencia = (linha.find(c => c.atual) || {}).data || new Date(ano, mes, 1);
+          const numSemana = getISOWeekNumber(dataReferencia);
+
+          const diasHtml = linha.map(celula => {
+            if (!celula.atual) {
+              return `<span class="h-6 flex items-center justify-center text-[10px] text-slate-300">${celula.dia}</span>`;
+            }
+            const chave = `${mes}-${celula.dia}`;
+            const pessoas = indice[chave] || [];
+            const temAniversario = pessoas.length > 0;
+            const ehHoje = isMesmoDia(celula.data, hoje);
+            const nomes = pessoas.map(p => p.name).join(', ').replace(/"/g, '&quot;');
+
+            let classes = "h-6 flex items-center justify-center text-[10px] font-bold rounded-full transition-all";
+            if (temAniversario) {
+              classes += " bg-rose-500 text-white shadow-sm cursor-pointer hover:bg-rose-600";
+              if (ehHoje) classes += " ring-2 ring-offset-1 ring-emerald-500";
+            } else if (ehHoje) {
+              classes += " ring-2 ring-emerald-500 text-emerald-700";
+            } else {
+              classes += " text-slate-600";
+            }
+
+            const clickAttr = temAniversario ? `onclick="mostrarAniversariantesDoDia(${ano},${mes},${celula.dia})"` : '';
+            const tituloAttr = temAniversario ? `title="${nomes}"` : '';
+
+            return `<span class="${classes}" ${clickAttr} ${tituloAttr}>${celula.dia}</span>`;
+          }).join('');
+
+          return `
+            <div class="flex items-center gap-1">
+              <span class="w-4 text-[9px] text-slate-300 font-bold text-right">${numSemana}</span>
+              <div class="grid grid-cols-7 gap-0.5 flex-1">${diasHtml}</div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
+            <h5 class="text-xs font-black text-slate-700 uppercase tracking-wide mb-2 pl-5">${nomeMes}</h5>
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-4"></span>
+              <div class="grid grid-cols-7 gap-0.5 flex-1">
+                ${DIAS_SEMANA_PT.map(d => `<span class="text-[9px] font-bold text-slate-400 text-center">${d}</span>`).join('')}
+              </div>
+            </div>
+            <div class="space-y-0.5">${linhasHtml}</div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="bg-slate-50/50 rounded-2xl border border-slate-200 p-3 sm:p-5">
+          <div class="flex items-center justify-between mb-4">
+            <button onclick="mudarAnoCalendarioAniversarios(-1)" class="p-1.5 rounded-lg hover:bg-white hover:shadow-sm text-slate-400 hover:text-slate-700 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <h3 class="text-base font-black text-slate-800">${ano}</h3>
+            <button onclick="mudarAnoCalendarioAniversarios(1)" class="p-1.5 rounded-lg hover:bg-white hover:shadow-sm text-slate-400 hover:text-slate-700 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${mesesHtml}
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-200 flex items-center justify-center gap-2 text-[10px] text-slate-400 font-semibold">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> dias com aniversário &nbsp;·&nbsp; clique num dia para ver quem faz aniversário
+          </div>
+        </div>
+      `;
+    }
+
+    window.mudarAnoCalendarioAniversarios = function(delta) {
+      anoCalendarioAniversarios += delta;
+      renderAniversariantes();
+    };
+
+    window.mostrarAniversariantesDoDia = function(ano, mes, dia) {
+      const indice = construirIndiceAniversarios();
+      const chave = `${mes}-${dia}`;
+      const pessoas = indice[chave] || [];
+      const detalheEl = document.getElementById('calendario-aniv-detalhe');
+      if (!detalheEl) return;
+
+      if (pessoas.length === 0) {
+        detalheEl.innerHTML = '';
+        return;
+      }
+
+      const dataStr = `${String(dia).padStart(2, '0')}/${String(mes + 1).padStart(2, '0')}`;
+
+      detalheEl.innerHTML = `
+        <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 pb-2 mb-3 mt-2">Aniversariantes em ${dataStr}</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          ${pessoas.map(p => {
+            const nasc = parseLocalDate(p.nascimento);
+            const idade = ano - nasc.getFullYear();
+            return `
+              <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow flex items-center justify-between">
+                <div>
+                  <h4 class="font-bold text-slate-800 text-sm cursor-pointer hover:text-emerald-600" onclick="abrirPerfilModal(${p.id}, true)">${p.name}</h4>
+                  <p class="text-[10px] text-slate-500 mt-0.5 font-bold uppercase tracking-wider">${p.title || ''}</p>
+                </div>
+                <div class="bg-rose-50 border border-rose-100 text-rose-600 rounded-lg px-2.5 py-1.5 text-center min-w-[54px] flex-shrink-0">
+                  <span class="block text-sm font-black">${idade}</span>
+                  <span class="block text-[8px] font-bold uppercase tracking-widest">anos</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    };
 
     function preencherFiltrosDashboard() {
       const selectEmpresa = document.getElementById('filter-empresa');
